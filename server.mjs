@@ -23,20 +23,26 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Função para obter a hora e data formatadas
-function getFormattedCurrentDate() {
-    const now = new Date();
-    return now.toLocaleDateString('pt-BR');
+// Rota para obter as varas disponíveis
+app.get('/api/varas', (req, res) => {
+    res.json(varasDisponiveis);
+});
+
+
+// Função para converter data no formato 'YYYY-MM-DD' para 'DD/MM/YYYY'
+function formatDateForPuppeteer(dateString) {
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
 }
 
 function getFormattedTomorrowDate() {
     const now = new Date();
     now.setDate(now.getDate() + 1); // Adiciona um dia
-    return now.toLocaleDateString('pt-BR');
+    return now.toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
 // Função principal de consulta
-async function executarConsulta() {
+async function executarConsulta(dataInicio, dataFim, dropdown) {
     const browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
 
@@ -49,65 +55,63 @@ async function executarConsulta() {
 
         await page.setViewport({ width: 1080, height: 1024 });
 
-        const dataInicio = getFormattedCurrentDate();
-        const dataFim = getFormattedTomorrowDate();
+        const dataInicioFormatada = formatDateForPuppeteer(dataInicio);
+        const dataFimFormatada = formatDateForPuppeteer(dataFim);
 
-        await page.$eval('#txtVFDataInicio', (el, value) => el.value = value, dataInicio);
-        await page.$eval('#txtVFDataTermino', (el, value) => el.value = value, dataFim);
+        console.log('Definindo Data Início:', dataInicioFormatada);
+        await page.$eval('#txtVFDataInicio', (el, value) => el.value = value, dataInicioFormatada);
+        console.log('Definindo Data Fim:', dataFimFormatada);
+        await page.$eval('#txtVFDataTermino', (el, value) => el.value = value, dataFimFormatada);
 
-        for (const varaGroup of varasDisponiveis) {
-            for (const vara of varaGroup.options) {
-                console.log(`Consultando: ${vara.text}`);
+        console.log('Selecionando Dropdown:', dropdown);
+        await page.select('#selVaraFederal', dropdown);
 
-                await page.waitForSelector('#selVaraFederal');
-                await page.select('#selVaraFederal', vara.value);
+        console.log('Clicando no Botão Consultar');
+        await page.click('#btnConsultar');
 
-                await page.click('#btnConsultar');
-                await page.waitForSelector('#tblAudienciasEproc');
+        console.log('Aguardando tabela carregar...');
+        // Use waitForSelector em vez de waitForTimeout
+        await page.waitForSelector('#tblAudienciasEproc', { timeout: 10000 }); // Aguarda até 10 segundos
 
-                const resultadosVara = await page.$$eval('#tblAudienciasEproc tr', (linhas, titulos, termosIgnorados) => {
-                    return linhas.map(linha => {
-                        const textoNormalizado = linha.textContent.toLowerCase();
-                        if (['custódia', 'custodia'].some(termo => textoNormalizado.includes(termo))) {
-                            const tds = Array.from(linha.querySelectorAll('td'));
-                            const conteudoLinha = [];
-                            let erroEncontrado = false;
+        const resultadosVara = await page.$$eval('#tblAudienciasEproc tr', (linhas, titulos, termosIgnorados) => {
+            return linhas.map(linha => {
+                const textoNormalizado = linha.textContent.toLowerCase();
+                if (['custódia', 'custodia'].some(termo => textoNormalizado.includes(termo))) {
+                    const tds = Array.from(linha.querySelectorAll('td'));
+                    const conteudoLinha = [];
+                    let erroEncontrado = false;
 
-                            tds.forEach(td => {
-                                let tdText = td.innerHTML
-                                    .replace(/<br\s*\/?>/gi, ' ')
-                                    .replace(/<\/?[^>]+>/gi, ' ')
-                                    .replace("Sala: ", " ")
-                                    .replace("Evento: ", " ")
-                                    .trim();
+                    tds.forEach(td => {
+                        let tdText = td.innerHTML
+                            .replace(/<br\s*\/?>/gi, ' ')
+                            .replace(/<\/?[^>]+>/gi, ' ')
+                            .replace("Sala: ", " ")
+                            .replace("Evento: ", " ")
+                            .trim();
 
-                                termosIgnorados.forEach(termo => {
-                                    const pos = tdText.toLowerCase().indexOf(termo.toLowerCase());
-                                    if (pos !== -1) {
-                                        tdText = tdText.slice(0, pos).trim();
-                                    }
-                                });
-
-                                if (tdText.toLowerCase().includes('ocorreu um erro')) {
-                                    erroEncontrado = true;
-                                }
-                                conteudoLinha.push(tdText);
-                            });
-
-                            if (!erroEncontrado) {
-                                const conteudoFiltrado = titulos.map(titulo => conteudoLinha.shift() || '');
-                                return conteudoFiltrado;
+                        termosIgnorados.forEach(termo => {
+                            const pos = tdText.toLowerCase().indexOf(termo.toLowerCase());
+                            if (pos !== -1) {
+                                tdText = tdText.slice(0, pos).trim();
                             }
+                        });
+
+                        if (tdText.toLowerCase().includes('ocorreu um erro')) {
+                            erroEncontrado = true;
                         }
-                        return null;
-                    }).filter(linha => linha !== null);
-                }, titulos, termosIgnorados);
+                        conteudoLinha.push(tdText);
+                    });
 
-                resultados.push(...resultadosVara);
-            }
-        }
+                    if (!erroEncontrado) {
+                        const conteudoFiltrado = titulos.map(titulo => conteudoLinha.shift() || '');
+                        return conteudoFiltrado;
+                    }
+                }
+                return null;
+            }).filter(linha => linha !== null);
+        }, titulos, termosIgnorados);
 
-        return resultados.length > 0 ? resultados : 'Nenhum resultado encontrado.';
+        return resultadosVara.length > 0 ? resultadosVara : 'Nenhum resultado encontrado.';
 
     } catch (error) {
         console.error(`Erro: ${error.message}`);
@@ -117,12 +121,24 @@ async function executarConsulta() {
     }
 }
 
+
+
+// Atualize a rota para usar os parâmetros
+app.get('/api/consultar', async (req, res) => {
+    const { dataInicio, dataFim, dropdown } = req.query;
+    console.log('Parâmetros recebidos:', { dataInicio, dataFim, dropdown });
+
+    const resultados = await executarConsulta(dataInicio, dataFim, dropdown);
+    res.json(resultados);
+});
+
+
 // Rota para consultar
 app.get('/api/consultar', async (req, res) => {
     const { dataInicio, dataFim, dropdown } = req.query;
     console.log('Parâmetros recebidos:', { dataInicio, dataFim, dropdown });
 
-    const resultados = await executarConsulta();
+    const resultados = await executarConsulta(dataInicio, dataFim, dropdown);
     res.json(resultados);
 });
 
