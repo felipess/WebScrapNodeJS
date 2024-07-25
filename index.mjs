@@ -1,10 +1,22 @@
 import puppeteer from 'puppeteer'; // Doc: https://pptr.dev/
 import clipboardy from 'clipboardy';
+import varasDisponiveis from './varasFederais.js';
 
-// Função para obter a data/hora formatada
-function getFormattedDatetime() {
+// Função para obter a hora atual formatada
+function getFormattedCurrentTime() {
     const now = new Date();
     return now.toLocaleTimeString('pt-BR');
+}
+
+function getFormattedCurrentDate() {
+    const now = new Date();
+    return now.toLocaleDateString('pt-BR');
+}
+
+function getFormattedTomorrowDate() {
+    const now = new Date();
+    now.setDate(now.getDate() + 1); // Adiciona um dia
+    return now.toLocaleDateString('pt-BR');
 }
 
 // Função para copiar conteúdo para a área de transferência
@@ -30,36 +42,27 @@ async function executarConsulta() {
 
         //await page.waitForSelector('#divRowVaraFederal');
 
-        const dataInicio = "23/07/2024";
-        const dataFim = '23072024';
+        const dataInicio = getFormattedCurrentDate();
+        const dataFim = getFormattedTomorrowDate();
 
         // Preencher os campos de data
-        await page.focus('#txtVFDataInicio');
-        await page.$eval('#txtVFDataInicio', el => el.value = "23/07/2024");
+        //await page.focus('#txtVFDataInicio');
+        await page.$eval('#txtVFDataInicio', (el, value) => el.value = value, dataInicio);
+        await page.$eval('#txtVFDataTermino', (el, value) => el.value = value, dataFim);
+
         //await page.keyboard.type('23072024');
-
-
 
         //await page.locator('#txtVFDataInicio').fill('23072024');
 
-
-
         //await page.locator('#txtVFDataTermino').fill(dataFim);
 
-        await page.select('#selVaraFederal', "700200018") //5VF ok
-
-
-        await page.locator('fsdfsdfsf').fill("sdfsdfs");
+        //await page.select('#selVaraFederal', "700200018") //5VF ok
 
         // Query for an element handle.
-        const element = await page.waitForSelector('div > .class-name');
+        //const element = await page.waitForSelector('div > .class-name');
 
         // Do something with element...
-        await element.click(); // Just an example.
-
-
-
-        /////////////////////////
+        //await element.click(); // Just an example.
 
         // await page.waitForSelector('#txtVFDataInicio');
         // await page.type('#txtVFDataInicio', dataInicio);
@@ -68,31 +71,39 @@ async function executarConsulta() {
         // await page.type('#txtVFDataTermino', dataFim);
 
         // Defina as varas selecionadas e as ordens de colunas conforme necessário
-        // const varasSelecionadas = ['1ª Vara Federal de Guaíra', '5ª Vara Federal de Foz do Iguaçu', '3ª Vara Federal de Foz do Iguaçu'];
+
+
         // const ordemColunas = [4, 1, 2, 0, 3];
 
-        // for (const vara of varasSelecionadas) {
-        //     console.log(`Consultando: ${vara}`);
+        for (const varaGroup of varasDisponiveis) {
+            for (const vara of varaGroup.options) {
+                // Supondo que cada objeto tenha uma propriedade `value` que você quer selecionar
+                console.log(`Consultando: ${vara.value}`);
 
-        //     // Aguarde o elemento select estar disponível e selecione a opção correta
-        //     await page.waitForSelector('#selVaraFederal');
-        //     await page.select('#selVaraFederal', vara);
+                await page.waitForSelector('#selVaraFederal');
+                await page.select('#selVaraFederal', vara.value); // Seleciona a opção da vara
 
-        //     // Clique no botão de consulta e aguarde os resultados
-        //     await page.click('#btnConsultar');
-        //     await page.waitForTimeout(2000); // Adicione um atraso para garantir que a consulta seja processada
+                // Clique no botão de consulta e aguarde os resultados
+                await page.click('#btnConsultar');
 
-        //     await page.waitForSelector('#tblAudienciasEproc');
+                // Espera o seletor dos resultados estar visível
+                await page.waitForSelector('#tblAudienciasEproc');
 
-        //     const resultadosVara = await page.$$eval('#tblAudienciasEproc tr', linhas => {
-        //         return linhas.map(linha => {
-        //             const tds = Array.from(linha.querySelectorAll('td'));
-        //             return tds.map(td => td.textContent.trim());
-        //         }).filter(linha => linha.some(td => td.toLowerCase().includes('custódia')));
-        //     });
+                // Coleta os resultados
+                const resultadosVara = await page.$$eval('#tblAudienciasEproc tr', linhas => {
+                    return linhas.map(linha => {
+                        const tds = Array.from(linha.querySelectorAll('td'));
+                        return tds.map(td => td.textContent.trim());
+                    }).filter(linha => linha.some(td => td.toLowerCase().includes('custódia')));
+                });
 
-        //     resultados.push(...resultadosVara);
-        // }
+                resultados.push(...resultadosVara);
+            }
+        }
+        console.log(resultados)
+
+
+        await page.locator('fsdfsdfsf').fill("sdfsdfs");
 
         if (resultados.length === 0) {
             console.log('Nenhum resultado encontrado.');
