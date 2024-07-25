@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "clipboardy": "^4.0.0",
-    "puppeteer": "^22.13.1"
+    "express": "^4.19.2",
+    "puppeteer": "^22.14.0"
   }
 }

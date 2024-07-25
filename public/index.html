@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de Audiências de Custódia</title>
-    <!-- Link para o CSS do Bootstrap -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -34,9 +33,9 @@
                 <div class="mb-3">
                     <label for="dropdown" class="form-label">Dropdown</label>
                     <select class="form-select" id="dropdown">
-                        <option value="option1">Opção 1</option>
-                        <option value="option2">Opção 2</option>
-                        <option value="option3">Opção 3</option>
+                        <option value="700500014">1ª Vara Federal de Cascavel</option> 
+                        <option value="700500011">2ª Vara Federal de Cascavel</option>
+                        <option value="700200018">5ª Vara Federal de Foz do Iguaçu</option>
                     </select>
                 </div>
             </div>
@@ -79,9 +78,11 @@
                 <table class="table" id="resultados">
                     <thead>
                         <tr>
-                            <th scope="col">Coluna 1</th>
-                            <th scope="col">Coluna 2</th>
-                            <th scope="col">Coluna 3</th>
+                            <th scope="col">Data/Hora</th>
+                            <th scope="col">Processo</th>
+                            <th scope="col">Juízo/Competência</th>
+                            <th scope="col">Sala</th>
+                            <th scope="col">Evento/Observação</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -103,5 +104,55 @@
 
     <!-- Scripts do Bootstrap -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('iniciarConsulta').addEventListener('click', async () => {
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+    const dropdown = document.getElementById('dropdown').value;
+
+    console.log('Dados enviados:', { dataInicio, dataFim, dropdown });
+
+    try {
+        const response = await fetch('/api/consultar');
+        
+        console.log('Resposta da API:', response);
+
+        if (!response.ok) {
+            throw new Error('Erro na requisição');
+        }
+
+        const resultados = await response.json();
+        console.log('Resultados recebidos:', resultados);
+
+        const tbody = document.querySelector('#resultados tbody');
+        tbody.innerHTML = ''; // Limpa a tabela
+
+        if (Array.isArray(resultados) && resultados.length > 0) {
+            resultados.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        } else {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 5;
+            td.textContent = resultados;
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+        }
+
+        document.getElementById('aviso').textContent = 'Consulta realizada com sucesso!';
+    } catch (error) {
+        console.error('Erro ao consultar:', error);
+        document.getElementById('aviso').textContent = 'Erro ao realizar a consulta.';
+    }
+});
+
+    </script>
 </body>
 </html>

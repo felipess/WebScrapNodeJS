@@ -1,13 +1,29 @@
-import puppeteer from 'puppeteer'; // Doc: https://pptr.dev/
+import express from 'express';
+import puppeteer from 'puppeteer';
 import clipboardy from 'clipboardy';
 import varasDisponiveis from './varasFederais.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Função para obter a hora atual formatada
-function getFormattedCurrentTime() {
-    const now = new Date();
-    return now.toLocaleTimeString('pt-BR');
-}
+// Obtém o caminho do diretório do arquivo atual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+const app = express();
+const port = 3000;
+
+// Middleware para lidar com JSON
+app.use(express.json());
+
+// Middleware para servir arquivos estáticos do diretório 'public'
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Rota para a raiz, serve o HTML
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Função para obter a hora e data formatadas
 function getFormattedCurrentDate() {
     const now = new Date();
     return now.toLocaleDateString('pt-BR');
@@ -19,35 +35,23 @@ function getFormattedTomorrowDate() {
     return now.toLocaleDateString('pt-BR');
 }
 
-// Função para copiar conteúdo para a área de transferência
-function copiarLinha(conteudoLinha, ordemColunas) {
-    const conteudoOrdenado = ordemColunas.map(i => conteudoLinha[i]);
-    const texto = conteudoOrdenado.join(' | ');
-    clipboardy.writeSync(texto);
-    console.log(`Conteúdo copiado: ${texto}`);
-}
-
 // Função principal de consulta
 async function executarConsulta() {
     const browser = await puppeteer.launch({ headless: false });
-    const page = await browser.newPage(); // puppeteer - Launch the browser and open a new blank page
+    const page = await browser.newPage();
 
     const resultados = [];
-    const titulos = ["Data/Hora", "Processo", "Juízo/Competência", "Sala", "Evento/Observação"]; // Títulos desejados
-
-    // Lista de termos para ignorar texto após eles
+    const titulos = ["Data/Hora", "Processo", "Juízo/Competência", "Sala", "Evento/Observação"];
     const termosIgnorados = ["Classe:", "Autor:", "Réu:", "Observação:"];
 
     try {
         await page.goto('https://eproc.jfpr.jus.br/eprocV2/externo_controlador.php?acao=pauta_audiencias');
 
-        // Set screen size.
         await page.setViewport({ width: 1080, height: 1024 });
 
         const dataInicio = getFormattedCurrentDate();
         const dataFim = getFormattedTomorrowDate();
 
-        // Preencher os campos de data
         await page.$eval('#txtVFDataInicio', (el, value) => el.value = value, dataInicio);
         await page.$eval('#txtVFDataTermino', (el, value) => el.value = value, dataFim);
 
@@ -56,15 +60,11 @@ async function executarConsulta() {
                 console.log(`Consultando: ${vara.text}`);
 
                 await page.waitForSelector('#selVaraFederal');
-                await page.select('#selVaraFederal', vara.value); // Seleciona a opção da vara
+                await page.select('#selVaraFederal', vara.value);
 
-                // Clique no botão de consulta e aguarde os resultados
                 await page.click('#btnConsultar');
-
-                // Espera o seletor dos resultados estar visível
                 await page.waitForSelector('#tblAudienciasEproc');
 
-                // Filtra e processa as linhas da tabela
                 const resultadosVara = await page.$$eval('#tblAudienciasEproc tr', (linhas, titulos, termosIgnorados) => {
                     return linhas.map(linha => {
                         const textoNormalizado = linha.textContent.toLowerCase();
@@ -74,17 +74,13 @@ async function executarConsulta() {
                             let erroEncontrado = false;
 
                             tds.forEach(td => {
-                                const tdHtml = td.innerHTML;
-
-                                // Remove conteúdo entre <br> tags e outras tags HTML
-                                let tdText = tdHtml
+                                let tdText = td.innerHTML
                                     .replace(/<br\s*\/?>/gi, ' ')
                                     .replace(/<\/?[^>]+>/gi, ' ')
                                     .replace("Sala: ", " ")
                                     .replace("Evento: ", " ")
-                                    .trim(); // Remove tags HTML e espaços em branco
+                                    .trim();
 
-                                // Remove texto após qualquer um dos termos ignorados
                                 termosIgnorados.forEach(termo => {
                                     const pos = tdText.toLowerCase().indexOf(termo.toLowerCase());
                                     if (pos !== -1) {
@@ -98,9 +94,7 @@ async function executarConsulta() {
                                 conteudoLinha.push(tdText);
                             });
 
-                            // Verifica se não ocorreu erro e filtra com base nos títulos esperados
                             if (!erroEncontrado) {
-                                // Filtra os dados com base no número de títulos desejados
                                 const conteudoFiltrado = titulos.map(titulo => conteudoLinha.shift() || '');
                                 return conteudoFiltrado;
                             }
@@ -109,31 +103,29 @@ async function executarConsulta() {
                     }).filter(linha => linha !== null);
                 }, titulos, termosIgnorados);
 
-                // Adiciona os resultados ao array final
                 resultados.push(...resultadosVara);
             }
         }
 
-        if (resultados.length === 0) {
-            console.log('Nenhum resultado encontrado.');
-        } else {
-            console.log('Resultados encontrados:');
-            console.table(resultados);
-        }
+        return resultados.length > 0 ? resultados : 'Nenhum resultado encontrado.';
 
     } catch (error) {
         console.error(`Erro: ${error.message}`);
+        return `Erro: ${error.message}`;
     } finally {
         await browser.close();
     }
 }
 
-// Agendar a próxima consulta
-function agendarProximaConsulta() {
-    setTimeout(() => {
-        executarConsulta().then(() => agendarProximaConsulta());
-    }, 900000); // 15 minutos em milissegundos
-}
+// Rota para consultar
+app.get('/api/consultar', async (req, res) => {
+    const { dataInicio, dataFim, dropdown } = req.query;
+    console.log('Parâmetros recebidos:', { dataInicio, dataFim, dropdown });
 
-// Executar a primeira consulta
-executarConsulta().then(() => agendarProximaConsulta());
+    const resultados = await executarConsulta();
+    res.json(resultados);
+});
+
+app.listen(port, () => {
+    console.log(`Servidor rodando em http://localhost:${port}`);
+});
