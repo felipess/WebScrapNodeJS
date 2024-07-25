@@ -94,16 +94,17 @@ async function executarConsulta() {
                     return linhas.map(linha => {
                         const tds = Array.from(linha.querySelectorAll('td'));
                         return tds.map(td => td.textContent.trim());
-                    }).filter(linha => linha.some(td => td.toLowerCase().includes('custódia')));
+                    }).filter(linha =>
+                        linha.some(td =>
+                            td.toLowerCase().includes('custódia') ||
+                            td.toLowerCase().includes('custodia')
+                        )
+                    );
                 });
 
                 resultados.push(...resultadosVara);
             }
         }
-        console.log(resultados)
-
-
-        await page.locator('fsdfsdfsf').fill("sdfsdfs");
 
         if (resultados.length === 0) {
             console.log('Nenhum resultado encontrado.');
