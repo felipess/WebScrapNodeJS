@@ -33,6 +33,10 @@ async function executarConsulta() {
     const page = await browser.newPage(); // puppeteer - Launch the browser and open a new blank page
 
     const resultados = [];
+    const titulos = ["Data/Hora", "Processo", "Juízo/Competência", "Sala", "Evento/Observação"]; // Títulos desejados
+
+    // Lista de termos para ignorar texto após eles
+    const termosIgnorados = ["Classe:", "Autor:", "Réu:", "Observação:"];
 
     try {
         await page.goto('https://eproc.jfpr.jus.br/eprocV2/externo_controlador.php?acao=pauta_audiencias');
@@ -40,45 +44,16 @@ async function executarConsulta() {
         // Set screen size.
         await page.setViewport({ width: 1080, height: 1024 });
 
-        //await page.waitForSelector('#divRowVaraFederal');
-
         const dataInicio = getFormattedCurrentDate();
         const dataFim = getFormattedTomorrowDate();
 
         // Preencher os campos de data
-        //await page.focus('#txtVFDataInicio');
         await page.$eval('#txtVFDataInicio', (el, value) => el.value = value, dataInicio);
         await page.$eval('#txtVFDataTermino', (el, value) => el.value = value, dataFim);
 
-        //await page.keyboard.type('23072024');
-
-        //await page.locator('#txtVFDataInicio').fill('23072024');
-
-        //await page.locator('#txtVFDataTermino').fill(dataFim);
-
-        //await page.select('#selVaraFederal', "700200018") //5VF ok
-
-        // Query for an element handle.
-        //const element = await page.waitForSelector('div > .class-name');
-
-        // Do something with element...
-        //await element.click(); // Just an example.
-
-        // await page.waitForSelector('#txtVFDataInicio');
-        // await page.type('#txtVFDataInicio', dataInicio);
-
-        // await page.waitForSelector('#txtVFDataTermino');
-        // await page.type('#txtVFDataTermino', dataFim);
-
-        // Defina as varas selecionadas e as ordens de colunas conforme necessário
-
-
-        // const ordemColunas = [4, 1, 2, 0, 3];
-
         for (const varaGroup of varasDisponiveis) {
             for (const vara of varaGroup.options) {
-                // Supondo que cada objeto tenha uma propriedade `value` que você quer selecionar
-                console.log(`Consultando: ${vara.value}`);
+                console.log(`Consultando: ${vara.text}`);
 
                 await page.waitForSelector('#selVaraFederal');
                 await page.select('#selVaraFederal', vara.value); // Seleciona a opção da vara
@@ -89,19 +64,52 @@ async function executarConsulta() {
                 // Espera o seletor dos resultados estar visível
                 await page.waitForSelector('#tblAudienciasEproc');
 
-                // Coleta os resultados
-                const resultadosVara = await page.$$eval('#tblAudienciasEproc tr', linhas => {
+                // Filtra e processa as linhas da tabela
+                const resultadosVara = await page.$$eval('#tblAudienciasEproc tr', (linhas, titulos, termosIgnorados) => {
                     return linhas.map(linha => {
-                        const tds = Array.from(linha.querySelectorAll('td'));
-                        return tds.map(td => td.textContent.trim());
-                    }).filter(linha =>
-                        linha.some(td =>
-                            td.toLowerCase().includes('custódia') ||
-                            td.toLowerCase().includes('custodia')
-                        )
-                    );
-                });
+                        const textoNormalizado = linha.textContent.toLowerCase();
+                        if (['custódia', 'custodia'].some(termo => textoNormalizado.includes(termo))) {
+                            const tds = Array.from(linha.querySelectorAll('td'));
+                            const conteudoLinha = [];
+                            let erroEncontrado = false;
 
+                            tds.forEach(td => {
+                                const tdHtml = td.innerHTML;
+
+                                // Remove conteúdo entre <br> tags e outras tags HTML
+                                let tdText = tdHtml
+                                    .replace(/<br\s*\/?>/gi, ' ')
+                                    .replace(/<\/?[^>]+>/gi, ' ')
+                                    .replace("Sala: ", " ")
+                                    .replace("Evento: ", " ")
+                                    .trim(); // Remove tags HTML e espaços em branco
+
+                                // Remove texto após qualquer um dos termos ignorados
+                                termosIgnorados.forEach(termo => {
+                                    const pos = tdText.toLowerCase().indexOf(termo.toLowerCase());
+                                    if (pos !== -1) {
+                                        tdText = tdText.slice(0, pos).trim();
+                                    }
+                                });
+
+                                if (tdText.toLowerCase().includes('ocorreu um erro')) {
+                                    erroEncontrado = true;
+                                }
+                                conteudoLinha.push(tdText);
+                            });
+
+                            // Verifica se não ocorreu erro e filtra com base nos títulos esperados
+                            if (!erroEncontrado) {
+                                // Filtra os dados com base no número de títulos desejados
+                                const conteudoFiltrado = titulos.map(titulo => conteudoLinha.shift() || '');
+                                return conteudoFiltrado;
+                            }
+                        }
+                        return null;
+                    }).filter(linha => linha !== null);
+                }, titulos, termosIgnorados);
+
+                // Adiciona os resultados ao array final
                 resultados.push(...resultadosVara);
             }
         }
@@ -124,7 +132,7 @@ async function executarConsulta() {
 function agendarProximaConsulta() {
     setTimeout(() => {
         executarConsulta().then(() => agendarProximaConsulta());
-    }, 900000); // 15 minutes in milliseconds
+    }, 900000); // 15 minutos em milissegundos
 }
 
 // Executar a primeira consulta
