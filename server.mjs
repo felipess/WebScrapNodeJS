@@ -29,11 +29,14 @@ app.get('/api/varas', (req, res) => {
 
 // Rota para consultar
 app.get('/api/consultar', async (req, res) => {
-    const { dataInicio, dataFim, dropdown } = req.query;
-    console.log('Parâmetros recebidos:', { dataInicio, dataFim, dropdown });
+    const { dataInicio, dataFim, varas } = req.query;
+
+    console.log('Parâmetros recebidos:', { dataInicio, dataFim, varas });
+
+    const varasArray = varas ? varas.split(',') : []; // Converte a string em um array
 
     try {
-        const resultados = await executarConsulta(dataInicio, dataFim, dropdown);
+        const resultados = await executarConsulta(dataInicio, dataFim, varasArray);
         res.json(resultados);
     } catch (error) {
         res.status(500).json({ error: error.message });

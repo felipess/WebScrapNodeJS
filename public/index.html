@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consulta de Audiências de Custódia</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <script>
         // Função para formatar a data no formato 'DD/MM/YYYY'
         function formatDateDDMMYYYY(date) {
@@ -21,6 +22,9 @@
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
+
+        // Variável para armazenar a lista de varas selecionadas
+        let varasSelecionadas = [];
 
         window.onload = () => {
             // Obtém os elementos de input
@@ -52,72 +56,80 @@
                 <h1>Consulta de audiências de custódia</h1>
             </div>
         </div>
-        
+
         <!-- 2ª Linha: Data Início, Data Fim, Dropdown -->
         <div class="row mb-3">
-            <div class="col-md-4">
+            <div class="col-md-2">
                 <div class="mb-3">
                     <label for="startDate" class="form-label">Data Início</label>
-                    <input type="date" id="startDate" name="startDate">
-                    <!-- <div id="startDateLabel" class="form-text"><label>Data padrão: DD/MM/YYYY</label></div> -->
+                    <input type="date" id="startDate" name="startDate" class="form-control">
+                    <!-- <div id="startDateLabel" class="form-text">Data padrão: DD/MM/YYYY</div> -->
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-2">
                 <div class="mb-3">
                     <label for="endDate" class="form-label">Data Fim</label>
-                    <input type="date" id="endDate" name="endDate">
+                    <input type="date" id="endDate" name="endDate" class="form-control">
                     <!-- <div id="endDateLabel" class="form-text">Data padrão: DD/MM/YYYY</div> -->
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-7">
                 <div class="mb-3">
-                    <label for="dropdown" class="form-label">Dropdown</label>
+                    <label for="dropdown" class="form-label">Vara</label>
                     <select class="form-select" id="dropdown">
                         <!-- Opções serão adicionadas aqui -->
                     </select>
                 </div>
             </div>
-        </div>
-
-        <!-- 3ª Linha: Botão para adicionar varas selecionadas -->
-        <div class="row mb-3">
-            <div class="col">
-                <button type="button" class="btn btn-secondary" id="adicionarVaras">Adicionar Varas</button>
-            </div>
-        </div>
-
-        <!-- 4ª Linha: Campo de Selecionados -->
-        <div class="row mb-3">
-            <div class="col">
-                <div id="selecionados">
-                    <!-- Opções selecionadas aparecerão aqui -->
+            <div class="col-md-1">
+                <label for="dropdown" class="form-label">Adicionar</label>
+                <div class="mb-3">
+                    <button type="button" class="btn btn-secondary" id="adicionarVaras">+</button>
                 </div>
             </div>
         </div>
-        
-        <!-- 4ª Linha: Label com Consulta Atual -->
+
         <div class="row mb-3">
             <div class="col">
-                <label id="consultaAtual" class="form-label">Consultando {vara}</label>
+                <h1>Varas Selecionadas</h1>
+                <div id="listaVaras" class="list-unstyled">
+                    <!-- Varas selecionadas aparecerão aqui -->
+                </div>
             </div>
         </div>
 
-        <!-- 5ª Linha: Labels Última e Próxima Consulta -->
+        <!-- 4ª Linha: Lista de Varas Selecionadas -->
+        <!-- <div class="row mb-12">
+            <div class="row">
+                <h4>Varas Selecionadas</h4>
+                <span id="listaVaras" class="list-unstyled">
+                </span>
+            </div>
+        </div> -->
+
+        <!-- 5ª Linha: Label com Consulta Atual -->
+        <!-- <div class="row mb-3">
+            <div class="col">
+                <label id="consultaAtual" class="form-label">Consultando: Nenhuma vara selecionada</label>
+            </div>
+        </div> -->
+
+        <!-- 6ª Linha: Labels Última e Próxima Consulta -->
         <div class="row mb-3">
             <div class="col">
                 <span id="ultimaConsulta">Última consulta: {ultimaconsulta}</span> - 
                 <span id="proximaConsulta">Próxima consulta: {proximaconsulta}</span>
             </div>
         </div>
-        
-        <!-- 6ª Linha: Botão Iniciar Consulta -->
+
+        <!-- 7ª Linha: Botão Iniciar Consulta -->
         <div class="row mb-3">
             <div class="col">
                 <button type="button" class="btn btn-primary" id="iniciarConsulta">Iniciar Consulta</button>
             </div>
         </div>
-        
-        <!-- 7ª Linha: Tabela de Resultados -->
+
+        <!-- 8ª Linha: Tabela de Resultados -->
         <div class="row mb-3">
             <div class="col">
                 <table class="table" id="resultados">
@@ -137,7 +149,7 @@
             </div>
         </div>
 
-        <!-- 8ª Linha: Container de Aviso -->
+        <!-- 9ª Linha: Container de Aviso -->
         <div class="row">
             <div class="col">
                 <div class="alert alert-warning" role="alert" id="aviso">
@@ -162,25 +174,83 @@
                         const opt = document.createElement('option');
                         opt.value = option.value;
                         opt.textContent = option.text;
+                        if (option.selected) {
+                            opt.selected = true;
+                            // Adiciona as opções pré-selecionadas na lista varasSelecionadas
+                            varasSelecionadas.push({ value: option.value, text: option.text });
+                        }
                         optgroup.appendChild(opt);
                     });
                     dropdown.appendChild(optgroup);
                 });
+
+                // Atualiza a lista de varas selecionadas no DOM
+                const listaVaras = document.getElementById('listaVaras');
+                varasSelecionadas.forEach(vara => {
+                    const li = document.createElement('li');
+                    li.textContent = vara.text;
+                    li.dataset.value = vara.value; // Armazena o valor da vara no item da lista
+                    li.classList.add('list-item');
+                    listaVaras.appendChild(li);
+                });
+
+                // Atualiza o label 'consultaAtual'
+                //document.getElementById('consultaAtual').textContent = `Consultando: ${varasSelecionadas.map(v => v.text).join(', ')}`;
+
+
             } catch (error) {
                 console.error('Erro ao carregar varas disponíveis:', error);
                 document.getElementById('aviso').textContent = 'Erro ao carregar varas disponíveis.';
             }
         });
 
+        document.getElementById('adicionarVaras').addEventListener('click', () => {
+            const dropdown = document.getElementById('dropdown');
+            const selectedOption = dropdown.options[dropdown.selectedIndex];
+            const valor = selectedOption.value;
+            const texto = selectedOption.textContent;
+
+            if (valor && !varasSelecionadas.some(v => v.value === valor)) {
+                // Adiciona a vara selecionada na lista
+                varasSelecionadas.push({ value: valor, text: texto });
+
+                // Atualiza a lista de varas no DOM
+                const listaVaras = document.getElementById('listaVaras');
+                const li = document.createElement('li');
+                li.textContent = texto;
+                li.dataset.value = valor; // Armazena o valor da vara no item da lista
+                li.classList.add('list-item');
+                listaVaras.appendChild(li);
+
+                // Atualiza o label 'consultaAtual'
+                //document.getElementById('consultaAtual').textContent = `Consultando: ${varasSelecionadas.map(v => v.text).join(', ')}`;
+            }
+        });
+
+        document.getElementById('listaVaras').addEventListener('click', (event) => {
+            if (event.target.classList.contains('list-item')) {
+                const item = event.target;
+                const valor = item.dataset.value;
+                
+                // Remove a vara da lista varasSelecionadas
+                varasSelecionadas = varasSelecionadas.filter(v => v.value !== valor);
+                
+                // Remove o item da listaVaras no DOM
+                item.remove();
+            }
+        });
+
         document.getElementById('iniciarConsulta').addEventListener('click', async () => {
             const dataInicio = document.getElementById('startDate').value;
             const dataFim = document.getElementById('endDate').value;
-            const dropdown = document.getElementById('dropdown').value;
 
-            console.log('Dados enviados:', { dataInicio, dataFim, dropdown });
+            // Converte varasSelecionadas para uma lista de valores separados por vírgula
+            const varas = varasSelecionadas.map(v => v.value);
+
+            console.log('Dados enviados:', { dataInicio, dataFim, varas });
 
             try {
-                const response = await fetch(`/api/consultar?dataInicio=${encodeURIComponent(dataInicio)}&dataFim=${encodeURIComponent(dataFim)}&dropdown=${encodeURIComponent(dropdown)}`);
+                const response = await fetch(`/api/consultar?dataInicio=${encodeURIComponent(dataInicio)}&dataFim=${encodeURIComponent(dataFim)}&varas=${encodeURIComponent(varas.join(','))}`);
                 
                 console.log('Resposta da API:', response);
 
@@ -194,24 +264,26 @@
                 const tbody = document.querySelector('#resultados tbody');
                 tbody.innerHTML = ''; // Limpa a tabela
 
-                if (Array.isArray(resultados) && resultados.length > 0) {
-                    resultados.forEach(row => {
+                resultados.forEach(resultado => {
+                    if (resultado.dados === 'Nenhum resultado encontrado.') {
                         const tr = document.createElement('tr');
-                        row.forEach(cell => {
-                            const td = document.createElement('td');
-                            td.textContent = cell;
-                            tr.appendChild(td);
-                        });
+                        const td = document.createElement('td');
+                        td.colSpan = 5;
+                        td.textContent = `Vara ${resultado.vara}: Nenhum resultado encontrado.`;
+                        tr.appendChild(td);
                         tbody.appendChild(tr);
-                    });
-                } else {
-                    const tr = document.createElement('tr');
-                    const td = document.createElement('td');
-                    td.colSpan = 5;
-                    td.textContent = resultados;
-                    tr.appendChild(td);
-                    tbody.appendChild(tr);
-                }
+                    } else {
+                        resultado.dados.forEach(row => {
+                            const tr = document.createElement('tr');
+                            row.forEach(cell => {
+                                const td = document.createElement('td');
+                                td.textContent = cell;
+                                tr.appendChild(td);
+                            });
+                            tbody.appendChild(tr);
+                        });
+                    }
+                });
 
                 document.getElementById('aviso').textContent = 'Consulta realizada com sucesso!';
             } catch (error) {

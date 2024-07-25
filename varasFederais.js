@@ -63,7 +63,7 @@ const varasDisponiveis = [
             { value: "700500014", text: "1ª Vara Federal de Cascavel" },
             { value: "700500011", text: "2ª Vara Federal de Cascavel" },
             { value: "700500001", text: "3ª Vara Federal de Cascavel" },
-            { value: "700500017", text: "4ª Vara Federal de Cascavel" },
+            { value: "700500017", text: "4ª Vara Federal de Cascavel", selected: true },
             { value: "700500700", text: "CEJUSCON-CASCAVEL" },
             { value: "700500801", text: "CENTRAL DE PERÍCIAS - CASCAVEL" }
         ]
@@ -88,8 +88,8 @@ const varasDisponiveis = [
             { value: "700000092", text: "10ª Vara Federal de Curitiba" },
             { value: "700000025", text: "11ª Vara Federal de Curitiba" },
             { value: "700000034", text: "12ª Vara Federal de Curitiba" },
-            { value: "700000037", text: "13ª Vara Federal de Curitiba" },
-            { value: "700000040", text: "14ª Vara Federal de Curitiba" },
+            { value: "700000037", text: "13ª Vara Federal de Curitiba", selected: true },
+            { value: "700000040", text: "14ª Vara Federal de Curitiba", selected: true },
             { value: "700000043", text: "15ª Vara Federal de Curitiba" },
             { value: "700000046", text: "16ª Vara Federal de Curitiba" },
             { value: "700000049", text: "17ª Vara Federal de Curitiba" },
@@ -98,7 +98,7 @@ const varasDisponiveis = [
             { value: "700000064", text: "20ª Vara Federal de Curitiba" },
             { value: "700000070", text: "21ª Vara Federal de Curitiba" },
             { value: "700000089", text: "22ª Vara Federal de Curitiba" },
-            { value: "700000095", text: "23ª Vara Federal de Curitiba" },
+            { value: "700000095", text: "23ª Vara Federal de Curitiba", selected: true },
             { value: "700000901", text: "CENTRO DE JUSTIÇA RESTAURATIVA - CURITIBA" },
             { value: "700000077", text: "Seção de Execução Penal de Catanduvas" },
             { value: "700000700", text: "DIVISÃO DE CONCILIAÇÕES" },
@@ -114,9 +114,9 @@ const varasDisponiveis = [
         options: [
             { value: "700200001", text: "1ª Vara Federal de Foz do Iguaçu" },
             { value: "700200004", text: "2ª Vara Federal de Foz do Iguaçu" },
-            { value: "700200007", text: "3ª Vara Federal de Foz do Iguaçu" },
+            { value: "700200007", text: "3ª Vara Federal de Foz do Iguaçu", selected: true },
             { value: "700200010", text: "4ª Vara Federal de Foz do Iguaçu" },
-            { value: "700200018", text: "5ª Vara Federal de Foz do Iguaçu" },
+            { value: "700200018", text: "5ª Vara Federal de Foz do Iguaçu", selected: true },
             { value: "700200021", text: "6ª Vara Federal de Foz do Iguaçu" },
             { value: "700200700", text: "CEJUSCON-FOZ DO IGUAÇU" },
             { value: "700200801", text: "CENTRAL DE PERÍCIAS - FOZ DO IGUAÇU" }
@@ -132,6 +132,13 @@ const varasDisponiveis = [
             { value: "701800013", text: "5ª Vara Federal de Francisco Beltrão" },
             { value: "701800700", text: "CEJUSCON-FRANCISCO BELTRÃO" },
             { value: "701800801", text: "CENTRAL DE PERÍCIAS - FRANCISCO BELTRÃO" }
+        ]
+    },
+    {
+        label: "Guaíra",
+        options: [
+            { value: "701700004", text: "1ª Vara Federal de Guaíra" },
+            { value: "701700801", text: "CENTRAL DE PERÍCIAS - GUAÍRA" },
         ]
     },
     {
@@ -152,7 +159,7 @@ const varasDisponiveis = [
             { value: "702800004", text: "2ª Vara Federal de Londrina" },
             { value: "702800007", text: "3ª Vara Federal de Londrina" },
             { value: "702800010", text: "4ª Vara Federal de Londrina" },
-            { value: "702800013", text: "5ª Vara Federal de Londrina" },
+            { value: "702800013", text: "5ª Vara Federal de Londrina", selected: true },
             { value: "702800700", text: "CEJUSCON-LONDRINA" },
             { value: "702800801", text: "CENTRAL DE PERÍCIAS - LONDRINA" }
         ]
@@ -162,8 +169,10 @@ const varasDisponiveis = [
         options: [
             { value: "703400001", text: "1ª Vara Federal de Maringá" },
             { value: "703400004", text: "2ª Vara Federal de Maringá" },
-            { value: "703400007", text: "3ª Vara Federal de Maringá" },
+            { value: "703400007", text: "3ª Vara Federal de Maringá", selected: true },
             { value: "703400010", text: "4ª Vara Federal de Maringá" },
+            { value: "700300019", text: "5ª Vara Federal de Maringá" },
+            { value: "700300016", text: "6ª Vara Federal de Maringá", selected: true },
             { value: "703400700", text: "CEJUSCON-MARINGÁ" },
             { value: "703400801", text: "CENTRAL DE PERÍCIAS - MARINGÁ" }
         ]
@@ -171,7 +180,7 @@ const varasDisponiveis = [
     {
         label: "Ponta Grossa",
         options: [
-            { value: "700600001", text: "1ª Vara Federal de Ponta Grossa" },
+            { value: "700600001", text: "1ª Vara Federal de Ponta Grossa", selected: true },
             { value: "700600004", text: "2ª Vara Federal de Ponta Grossa" },
             { value: "700600007", text: "3ª Vara Federal de Ponta Grossa" },
             { value: "700600010", text: "4ª Vara Federal de Ponta Grossa" },
@@ -201,7 +210,7 @@ const varasDisponiveis = [
     {
         label: "Umuarama",
         options: [
-            { value: "700400001", text: "1ª Vara Federal de Umuarama" },
+            { value: "700400001", text: "1ª Vara Federal de Umuarama", selected: true },
             { value: "700400007", text: "2ª Vara Federal de Umuarama" },
             { value: "700400011", text: "3ª Vara Federal de Umuarama" },
             { value: "700400700", text: "CEJUSCON-UMUARAMA" },
