@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Audiências de Custódia</title>
+    <!-- Link para o CSS do Bootstrap -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- 1ª Linha: Campo de Texto -->
+        <div class="row mb-3">
+            <div class="col">
+                <h1>Consulta de audiências de custódia</h1>
+            </div>
+        </div>
+        
+        <!-- 2ª Linha: Data Início, Data Fim, Dropdown -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="dataInicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="dataInicio">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="dataFim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="dataFim">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="dropdown" class="form-label">Dropdown</label>
+                    <select class="form-select" id="dropdown">
+                        <option value="option1">Opção 1</option>
+                        <option value="option2">Opção 2</option>
+                        <option value="option3">Opção 3</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3ª Linha: Campo de Selecionados -->
+        <div class="row mb-3">
+            <div class="col">
+                <div id="selecionados">
+                    <!-- Opções selecionadas aparecerão aqui -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 4ª Linha: Label com Consulta Atual -->
+        <div class="row mb-3">
+            <div class="col">
+                <label id="consultaAtual" class="form-label">Consultando {vara}</label>
+            </div>
+        </div>
+
+        <!-- 5ª Linha: Labels Última e Próxima Consulta -->
+        <div class="row mb-3">
+            <div class="col">
+                <span id="ultimaConsulta">Última consulta: {ultimaconsulta}</span> - 
+                <span id="proximaConsulta">Próxima consulta: {proximaconsulta}</span>
+            </div>
+        </div>
+        
+        <!-- 6ª Linha: Botão Iniciar Consulta -->
+        <div class="row mb-3">
+            <div class="col">
+                <button type="button" class="btn btn-primary" id="iniciarConsulta">Iniciar Consulta</button>
+            </div>
+        </div>
+        
+        <!-- 7ª Linha: Tabela de Resultados -->
+        <div class="row mb-3">
+            <div class="col">
+                <table class="table" id="resultados">
+                    <thead>
+                        <tr>
+                            <th scope="col">Coluna 1</th>
+                            <th scope="col">Coluna 2</th>
+                            <th scope="col">Coluna 3</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Resultados serão adicionados aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 8ª Linha: Container de Aviso -->
+        <div class="row">
+            <div class="col">
+                <div class="alert alert-warning" role="alert" id="aviso">
+                    <!-- Mensagem de aviso aparecerá aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts do Bootstrap -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
