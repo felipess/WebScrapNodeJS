@@ -5,7 +5,6 @@ import varasDisponiveis from './varasFederais.js';
 import { executarConsulta } from './consulta.mjs'; // Importa a função de consulta
 import { getUltimaConsulta, getProximaConsulta, setUltimaConsulta, setProximaConsulta } from './dadosConsulta.mjs';
 
-
 // Obtém o caminho do diretório do arquivo atual
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
