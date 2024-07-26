@@ -3,6 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import varasDisponiveis from './varasFederais.js';
 import { executarConsulta } from './consulta.mjs'; // Importa a função de consulta
+import { getUltimaConsulta, getProximaConsulta, setUltimaConsulta, setProximaConsulta } from './dadosConsulta.mjs';
+
 
 // Obtém o caminho do diretório do arquivo atual
 const __filename = fileURLToPath(import.meta.url);
@@ -41,6 +43,28 @@ app.get('/api/consultar', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// Endpoint para obter as datas da consulta
+app.get('/api/datas-consulta', (req, res) => {
+    res.json({
+        ultimaConsulta: getUltimaConsulta(),
+        proximaConsulta: getProximaConsulta()
+    });
+});
+
+// Endpoint para definir a última consulta
+app.post('/api/ultima-consulta', (req, res) => {
+    const { data } = req.body;
+    setUltimaConsulta(data);
+    res.status(200).json({ message: 'Última consulta atualizada.' });
+});
+
+// Endpoint para definir a próxima consulta
+app.post('/api/proxima-consulta', (req, res) => {
+    const { data } = req.body;
+    setProximaConsulta(data);
+    res.status(200).json({ message: 'Próxima consulta atualizada.' });
 });
 
 

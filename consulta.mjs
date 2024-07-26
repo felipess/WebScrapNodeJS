@@ -11,7 +11,7 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const interval = 1 * 60 * 1000; // Intervalo de 1 minuto em milissegundos
+const interval = 10 * 60 * 1000; // Intervalo de 1 minuto em milissegundos
 
 // Função principal de consulta
 export async function executarConsulta(dataInicio, dataFim, varas) {
