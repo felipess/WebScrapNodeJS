@@ -39,15 +39,21 @@
             fetch('/api/datas-consulta') // Ajuste o endpoint da API conforme necessário
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
-                    document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta}`;
+                    document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta || 'N/A'}`;
+                    document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta || 'N/A'}`;
                 })
                 .catch(error => {
                     console.error('Erro ao carregar datas de consulta:', error);
+                    document.getElementById('ultimaConsulta').textContent = 'Última consulta: N/A';
+                    document.getElementById('proximaConsulta').textContent = 'Próxima consulta: N/A';
                 });
         }
 
         window.onload = () => {
+            
+            // Limpa as datas ao carregar a página
+            document.getElementById('ultimaConsulta').textContent = 'Última consulta: N/A';
+            document.getElementById('proximaConsulta').textContent = 'Próxima consulta: N/A';
 
             // Atualiza as datas da última e próxima consulta
             atualizarDatasConsulta();
@@ -71,6 +77,12 @@
             startDateLabel.textContent = formatDateDDMMYYYY(today);
             endDateLabel.textContent = formatDateDDMMYYYY(tomorrow);
         };
+
+        // Função que deve ser chamada após a consulta ser finalizada
+        function finalizarConsulta() {
+            atualizarDatasConsulta();
+        }
+
     </script>
 </head>
 <body>
@@ -197,6 +209,7 @@
     <!-- Scripts do Bootstrap -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
+
         document.addEventListener('DOMContentLoaded', async () => {
             // Atualiza as datas da última e próxima consulta
             try {
@@ -210,7 +223,6 @@
 
             document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
             document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta}`;
-
         } catch (error) {
             console.error('Erro ao carregar datas de consulta:', error);
             document.getElementById('ultimaConsulta').textContent = 'Última consulta: Erro ao carregar';
@@ -295,77 +307,82 @@
             }
         });
 
-document.getElementById('iniciarConsulta').addEventListener('click', async () => {
-    const dataInicio = document.getElementById('startDate').value;
-    const dataFim = document.getElementById('endDate').value;
-    const varas = varasSelecionadas.map(v => v.value);
+        //import { getUltimaConsulta, getProximaConsulta } from './dadosConsulta.mjs';
+        document.getElementById('iniciarConsulta').addEventListener('click', async () => {
+            
+            const dataInicio = document.getElementById('startDate').value;
+            const dataFim = document.getElementById('endDate').value;
+            const varas = varasSelecionadas.map(v => v.value);
 
-    console.log('Dados enviados:', { dataInicio, dataFim, varas });
+            console.log('Dados enviados:', { dataInicio, dataFim, varas });
 
-    try {
-        const response = await fetch(`/api/consultar?dataInicio=${encodeURIComponent(dataInicio)}&dataFim=${encodeURIComponent(dataFim)}&varas=${encodeURIComponent(varas.join(','))}`);
-        
-        if (!response.ok) {
-            throw new Error('Erro na requisição');
-        }
+            try {
+                const response = await fetch(`/api/consultar?dataInicio=${encodeURIComponent(dataInicio)}&dataFim=${encodeURIComponent(dataFim)}&varas=${encodeURIComponent(varas.join(','))}`);
+                
+                if (!response.ok) {
+                    throw new Error('Erro na requisição');
+                }
 
-        const resultados = await response.json();
-        console.log('Resultados recebidos:', resultados);
+                const resultados = await response.json();
+                console.log('Resultados recebidos:', resultados);
 
-        const tbody = document.querySelector('#resultados tbody');
-        tbody.innerHTML = ''; // Limpa a tabela
+                const tbody = document.querySelector('#resultados tbody');
+                tbody.innerHTML = ''; // Limpa a tabela
 
-        if (resultados.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6">Nenhum resultado encontrado.</td></tr>';
-            return;
-        }
+                if (resultados.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6">Nenhum resultado encontrado.</td></tr>';
+                    return;
+                }
 
-        resultados.forEach(resultado => {
-            if (resultado.dados === 'Nenhum resultado encontrado.') {
-                const tr = document.createElement('tr');
-                const td = document.createElement('td');
-                td.colSpan = 6;
-                td.textContent = `Vara ${resultado.vara}: Nenhum resultado encontrado.`;
-                tr.appendChild(td);
-                tbody.appendChild(tr);
-            } else {
-                resultado.dados.forEach(row => {
-                    const tr = document.createElement('tr');
-                    row.forEach(cell => {
+                resultados.forEach(resultado => {
+                    if (resultado.dados === 'Nenhum resultado encontrado.') {
+                        const tr = document.createElement('tr');
                         const td = document.createElement('td');
-                        td.textContent = cell;
+                        td.colSpan = 6;
+                        td.textContent = `Vara ${resultado.vara}: Nenhum resultado encontrado.`;
                         tr.appendChild(td);
-                    });
+                        tbody.appendChild(tr);
+                    } else {
+                        resultado.dados.forEach(row => {
+                            const tr = document.createElement('tr');
+                            row.forEach(cell => {
+                                const td = document.createElement('td');
+                                td.textContent = cell;
+                                tr.appendChild(td);
+                            });
 
-                    const copyButton = document.createElement('button');
-                    copyButton.textContent = 'Copiar';
-                    copyButton.className = 'btn btn-secondary btn-sm';
-                    copyButton.addEventListener('click', () => {
-                        const dadosParaCopiar = [row[4], row[1], row[2], row[0], row[3]]; // Ajuste a ordem se necessário
-                        const textoParaCopiar = dadosParaCopiar.join(' - ');
+                            const copyButton = document.createElement('button');
+                            copyButton.textContent = 'Copiar';
+                            copyButton.className = 'btn btn-secondary btn-sm';
+                            copyButton.addEventListener('click', () => {
+                                const dadosParaCopiar = [row[4], row[1], row[2], row[0], row[3]]; // Ajuste a ordem se necessário
+                                const textoParaCopiar = dadosParaCopiar.join(' - ');
 
-                        navigator.clipboard.writeText(textoParaCopiar).then(() => {
-                            alert('Dados copiados para a área de transferência!');
-                        }).catch(err => {
-                            console.error('Erro ao copiar os dados:', err);
+                                navigator.clipboard.writeText(textoParaCopiar).then(() => {
+                                    alert('Dados copiados para a área de transferência!');
+                                }).catch(err => {
+                                    console.error('Erro ao copiar os dados:', err);
+                                });
+                            });
+
+                            const tdAcoes = document.createElement('td');
+                            tdAcoes.appendChild(copyButton);
+                            tr.appendChild(tdAcoes);
+
+                            tbody.appendChild(tr);
                         });
-                    });
-
-                    const tdAcoes = document.createElement('td');
-                    tdAcoes.appendChild(copyButton);
-                    tr.appendChild(tdAcoes);
-
-                    tbody.appendChild(tr);
+                    }
                 });
+
+                document.getElementById('aviso').textContent = 'Consulta realizada com sucesso!';
+                finalizarConsulta()
+                
+            } catch (error) {
+                finalizarConsulta()
+                console.error('Erro ao consultar:', error);
+                document.getElementById('aviso').textContent = 'Erro ao realizar a consulta.';
             }
         });
-
-        document.getElementById('aviso').textContent = 'Consulta realizada com sucesso!';
-    } catch (error) {
-        console.error('Erro ao consultar:', error);
-        document.getElementById('aviso').textContent = 'Erro ao realizar a consulta.';
-    }
-});
 
 
         // Inicializa os tooltips no DOM
@@ -375,6 +392,7 @@ document.getElementById('iniciarConsulta').addEventListener('click', async () =>
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         });
+
     </script>
 </body>
 </html>
