@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import varasDisponiveis from './varasFederais.js';
 import { executarConsulta } from './consulta.mjs'; // Importa a função de consulta
-import { getUltimaConsulta, getProximaConsulta, setUltimaConsulta, setProximaConsulta } from './dadosConsulta.mjs';
+import { getUltimaConsulta, getProximaConsulta, setUltimaConsulta, setProximaConsulta, getStatusExecucao } from './dadosConsulta.mjs';
 
 // Obtém o caminho do diretório do arquivo atual
 const __filename = fileURLToPath(import.meta.url);
@@ -40,13 +40,18 @@ app.get('/api/consultar', async (req, res) => {
         const resultados = await executarConsulta(dataInicio, dataFim, varasArray);
         res.json(resultados);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: error.message,
+            status: 'error',
+            message: 'Erro ao realizar a consulta.'
+        });
     }
 });
 
 // Endpoint para obter as datas da consulta
 app.get('/api/datas-consulta', (req, res) => {
     res.json({
+        status: getStatusExecucao(),
         ultimaConsulta: getUltimaConsulta(),
         proximaConsulta: getProximaConsulta()
     });

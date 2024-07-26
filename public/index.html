@@ -37,19 +37,35 @@
         let varasSelecionadas = [];
 
         // Função para atualizar as datas da última e próxima consulta
-        function atualizarDatasConsulta() {
-            fetch('/api/datas-consulta') // Ajuste o endpoint da API conforme necessário
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta || 'N/A'}`;
-                    document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta || 'N/A'}`;
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar datas de consulta:', error);
-                    document.getElementById('ultimaConsulta').textContent = 'Última consulta: N/A';
-                    document.getElementById('proximaConsulta').textContent = 'Próxima consulta: N/A';
-                });
+        // function atualizarDatasConsulta() {
+        //     fetch('/api/datas-consulta') // Ajuste o endpoint da API conforme necessário
+        //         .then(response => response.json())
+        //         .then(data => {
+        //             document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta || ''}`;
+        //             document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta || '-'}`;
+        //         })
+        //         .catch(error => {
+        //             console.error('Erro ao carregar datas de consulta:', error);
+        //             // document.getElementById('ultimaConsulta').textContent = 'Última consulta: -';
+        //             // document.getElementById('proximaConsulta').textContent = 'Próxima consulta: -';
+        //         });
+        // }
+
+        async function atualizarStatus() {
+            try {
+                const response = await fetch('/api/datas-consulta');
+                const data = await response.json();
+
+                console.log(data);
+                document.getElementById('statusExecucao').textContent = `Status: ${data.statusExecucao}`;
+                document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
+                document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta}`;
+            } catch (error) {
+                console.error('Erro ao obter status de consulta:', error);
+            }
         }
+        // check status a cada 5 segundos
+        setInterval(atualizarStatus, 5000);        
 
         window.onload = () => {
             
@@ -58,7 +74,7 @@
             document.getElementById('proximaConsulta').textContent = 'Próxima consulta: N/A';
 
             // Atualiza as datas da última e próxima consulta
-            atualizarDatasConsulta();
+            // atualizarDatasConsulta();
 
             // Obtém os elementos de input
             const startDateInput = document.getElementById('startDate');
@@ -81,9 +97,9 @@
         };
 
         // Função que deve ser chamada após a consulta ser finalizada
-        function finalizarConsulta() {
-            atualizarDatasConsulta();
-        }
+        // function finalizarConsulta() {
+        //     atualizarDatasConsulta();
+        // }
 
     </script>
 </head>
@@ -167,6 +183,7 @@
             <div class="col">
                 <span id="ultimaConsulta">Última consulta: </span> - 
                 <span id="proximaConsulta">Próxima consulta: </span>
+                <div id="statusExecucao">Status: </div>
             </div>
         </div>
 
@@ -225,6 +242,7 @@
 
             document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
             document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta}`;
+            //finalizarConsulta();            
         } catch (error) {
             console.error('Erro ao carregar datas de consulta:', error);
             document.getElementById('ultimaConsulta').textContent = 'Última consulta: Erro ao carregar';
@@ -311,7 +329,6 @@
 
         //import { getUltimaConsulta, getProximaConsulta } from './dadosConsulta.mjs';
         document.getElementById('iniciarConsulta').addEventListener('click', async () => {
-            
             // Desabilita o botão enquanto a consulta está em andamento
             const botaoIniciarConsulta = document.getElementById('iniciarConsulta');
             botaoIniciarConsulta.disabled = true;
@@ -358,10 +375,8 @@
                             });
 
                             const copyButton = document.createElement('button');
-                            //copyButton.textContent = 'Copiar';
                             copyButton.className = 'btn btn-secondary btn-sm';
                             copyButton.innerHTML = '<i class="bi bi-copy"></i>'; // Ícone de copiar
-
 
                             copyButton.addEventListener('click', () => {
                                 const dadosParaCopiar = [row[4], row[1], row[2], row[0], row[3]]; // Ajuste a ordem se necessário
@@ -384,18 +399,18 @@
                 });
 
                 document.getElementById('aviso').textContent = 'Consulta realizada com sucesso!';
-                finalizarConsulta()
-                
+                finalizarConsulta();
+
             } catch (error) {
                 console.error('Erro ao consultar:', error);
                 document.getElementById('aviso').textContent = 'Erro ao realizar a consulta.';
-            }
-            finally {
+            } finally {
                 // Habilita o botão após a consulta ser finalizada
                 botaoIniciarConsulta.disabled = false;
-                finalizarConsulta();
+                // atualizarDatasConsulta(); // Atualiza as datas ao final da execução
             }
         });
+
 
 
         // Inicializa os tooltips no DOM
@@ -405,6 +420,21 @@
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         });
+
+        // async function atualizarStatus() {
+        //     try {
+        //         const response = await fetch('/api/status-consulta');
+        //         const data = await response.json();
+
+        //         document.getElementById('statusExecucao').textContent = `Status: ${data.status}`;
+        //         document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
+        //         document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta}`;
+        //     } catch (error) {
+        //         console.error('Erro ao obter status de consulta:', error);
+        //     }
+        // }
+        // // check status a cada 5 segundos
+        // setInterval(atualizarStatus, 5000);
 
     </script>
 </body>

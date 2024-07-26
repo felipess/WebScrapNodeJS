@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer';
-import { setUltimaConsulta, setProximaConsulta } from './dadosConsulta.mjs';
+import { setUltimaConsulta, setProximaConsulta, setStatusExecucao } from './dadosConsulta.mjs';
 
 // Função para converter data no formato 'YYYY-MM-DD' para 'DD/MM/YYYY'
 function formatDateForPuppeteer(dateString) {
@@ -11,10 +11,11 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const interval = 3 * 60 * 1000; // Intervalo de 1 minuto em milissegundos
+const interval = 1 * 60 * 1000; // Intervalo de 1 minuto em milissegundos
 
 // Função principal de consulta
 export async function executarConsulta(dataInicio, dataFim, varas) {
+    setStatusExecucao('Em Execução'); // Define o status como "Em Execução"
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
@@ -138,7 +139,7 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
         const proximaConsulta = new Date(Date.now() + interval).toLocaleString();
         console.log(`Próxima consulta: ${proximaConsulta}`);
         setProximaConsulta(proximaConsulta); // Atualiza a próxima consulta no módulo de dados
-
+        setStatusExecucao('Finalizada'); // Define o status como "Finalizada"
         setTimeout(() => executarConsulta(dataInicio, dataFim, varas), interval);
     }
 }

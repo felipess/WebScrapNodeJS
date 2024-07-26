@@ -1,8 +1,9 @@
 let ultimaConsulta = ''; // Valor padrão inicial
-let proximaConsulta = '-'; // Valor padrão inicial
+let proximaConsulta = ''; // Valor padrão inicial
+let statusExecucao = ''; // Novo status
 
 export function getUltimaConsulta() {
-    console.log('Obtendo última consulta:', ultimaConsulta);
+    //console.log('Obtendo última consulta:', ultimaConsulta);
     return ultimaConsulta;
 }
 
@@ -13,7 +14,7 @@ export function setUltimaConsulta(data) {
 }
 
 export function getProximaConsulta() {
-    console.log('Obtendo próxima consulta:', proximaConsulta);
+    //console.log('Obtendo próxima consulta:', proximaConsulta);
     return proximaConsulta;
 }
 
@@ -23,8 +24,10 @@ export function setProximaConsulta(data) {
     // atualizarLabels(); // Atualiza os labels
 }
 
-// // Função para atualizar os labels no DOM
-// function atualizarLabels() {
-//     document.getElementById('ultimaConsulta').textContent = `Última consulta: ${getUltimaConsulta()}`;
-//     document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${getProximaConsulta()}`;
-// }
+export function setStatusExecucao(status) {
+    statusExecucao = status;
+}
+
+export function getStatusExecucao() {
+    return statusExecucao;
+}
