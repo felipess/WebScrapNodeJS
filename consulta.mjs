@@ -40,24 +40,24 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
                 await page.$eval('#txtVFDataTermino', (el, value) => el.value = value, dataFimFormatada);
 
                 console.log('Selecionando Dropdown:', dropdown);
-                await sleep(1000); // Espera 
+                await sleep(500); // Espera 
 
 
                 await page.waitForSelector('#divRowVaraFederal', { timeout: 500 });
 
-                await page.waitForSelector('#selVaraFederal', { timeout: 2000 });
+                await page.waitForSelector('#selVaraFederal', { timeout: 1000 });
                 //await page.select('#selVaraFederal', dropdown);
                 console.log('Selecionando Dropdown:', dropdown);
 
                 await page.$eval('#selVaraFederal', (el, value) => el.value = value, dropdown);
 
 
-                await sleep(1000); // Espera 
+                await sleep(500); // Espera 
 
                 console.log('Clicando no Botão Consultar');
                 await page.click('#btnConsultar');
 
-                await sleep(1000); // Espera 
+                await sleep(500); // Espera 
 
                 // Verifica se há a mensagem de nenhum resultado encontrado
                 const mensagemNenhumResultado = await page.$eval('#divInfraAreaTabela', (div) => {
@@ -66,26 +66,12 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
 
                 if (mensagemNenhumResultado) {
                     console.log(`Nenhum resultado encontrado para a vara ${dropdown}.`);
-                    resultados.push({
-                        vara: dropdown,
-                        dados: 'Nenhum resultado encontrado.'
-                    });
+                    // resultados.push({
+                    //     vara: dropdown,
+                    //     dados: 'Nenhum resultado encontrado.'
+                    // });
                     continue; // Continua para o próximo dropdown
                 }
-
-                // Aguarda até que o conteúdo da página esteja disponível
-                console.log('Aguardando tabela carregar...');
-                await page.waitForFunction(
-                    () => document.querySelector('#tblAudienciasEproc') !== null,
-                    { timeout: 10000 } // Aumenta o tempo limite
-                );
-
-                // Verifica o conteúdo da página para depuração
-                const pageContent = await page.content();
-                //console.log('Conteúdo da página após clique:', pageContent);
-
-                console.log('Aguardando tabela carregar...');
-                await page.waitForSelector('#tblAudienciasEproc', { timeout: 10000 }); // Aumenta o tempo limite
 
                 await sleep(1000); // Espera 
 
@@ -131,11 +117,6 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
                     resultados.push({
                         vara: dropdown,
                         dados: resultadosVara
-                    });
-                } else {
-                    resultados.push({
-                        vara: dropdown,
-                        dados: 'Nenhum resultado encontrado.'
                     });
                 }
 
