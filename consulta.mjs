@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer';
+import { setUltimaConsulta, setProximaConsulta } from './dadosConsulta.mjs';
 
 // Função para converter data no formato 'YYYY-MM-DD' para 'DD/MM/YYYY'
 function formatDateForPuppeteer(dateString) {
@@ -10,14 +11,21 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const interval = 1 * 60 * 1000; // Intervalo de 1 minuto em milissegundos
+
 // Função principal de consulta
 export async function executarConsulta(dataInicio, dataFim, varas) {
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
     const resultados = [];
     const titulos = ["Data/Hora", "Processo", "Juízo/Competência", "Sala", "Evento/Observação"];
     const termosIgnorados = ["Classe:", "Autor:", "Réu:", "Observação:"];
+
+    // Atualiza a última consulta
+    const ultimaConsulta = new Date().toLocaleString();
+    console.log(`Última consulta: ${ultimaConsulta}`);
+    setUltimaConsulta(ultimaConsulta); // Atualiza a última consulta no módulo de dados
 
     try {
         await page.goto('https://eproc.jfpr.jus.br/eprocV2/externo_controlador.php?acao=pauta_audiencias');
@@ -39,18 +47,14 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
                 await page.waitForSelector('#txtVFDataTermino', { timeout: 500 });
                 await page.$eval('#txtVFDataTermino', (el, value) => el.value = value, dataFimFormatada);
 
-                console.log('Selecionando Dropdown:', dropdown);
                 await sleep(500); // Espera 
-
 
                 await page.waitForSelector('#divRowVaraFederal', { timeout: 500 });
 
                 await page.waitForSelector('#selVaraFederal', { timeout: 1000 });
-                //await page.select('#selVaraFederal', dropdown);
                 console.log('Selecionando Dropdown:', dropdown);
 
                 await page.$eval('#selVaraFederal', (el, value) => el.value = value, dropdown);
-
 
                 await sleep(500); // Espera 
 
@@ -66,10 +70,6 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
 
                 if (mensagemNenhumResultado) {
                     console.log(`Nenhum resultado encontrado para a vara ${dropdown}.`);
-                    // resultados.push({
-                    //     vara: dropdown,
-                    //     dados: 'Nenhum resultado encontrado.'
-                    // });
                     continue; // Continua para o próximo dropdown
                 }
 
@@ -133,5 +133,12 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
         throw new Error(error.message);
     } finally {
         await browser.close();
+
+        // Calcula e exibe a próxima consulta
+        const proximaConsulta = new Date(Date.now() + interval).toLocaleString();
+        console.log(`Próxima consulta: ${proximaConsulta}`);
+        setProximaConsulta(proximaConsulta); // Atualiza a próxima consulta no módulo de dados
+
+        setTimeout(() => executarConsulta(dataInicio, dataFim, varas), interval);
     }
 }
