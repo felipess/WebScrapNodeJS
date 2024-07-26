@@ -6,7 +6,10 @@ function formatDateForPuppeteer(dateString) {
     return `${day}/${month}/${year}`;
 }
 
-// Função principal de consulta
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Função principal de consulta
 export async function executarConsulta(dataInicio, dataFim, varas) {
     const browser = await puppeteer.launch({ headless: false });
@@ -18,90 +21,127 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
 
     try {
         await page.goto('https://eproc.jfpr.jus.br/eprocV2/externo_controlador.php?acao=pauta_audiencias');
-        await page.setViewport({ width: 1080, height: 1024 });
+        await page.setViewport({ width: 1920, height: 1080 });
 
         const dataInicioFormatada = formatDateForPuppeteer(dataInicio);
-        const dataFimFormatada = formatDateForPuppeteer(dataFim);
-
         console.log('Definindo Data Início:', dataInicioFormatada);
-        await page.$eval('#txtVFDataInicio', (el, value) => el.value = value, dataInicioFormatada);
-        console.log('Definindo Data Fim:', dataFimFormatada);
-        await page.$eval('#txtVFDataTermino', (el, value) => el.value = value, dataFimFormatada);
+
+        const dataFimFormatada = formatDateForPuppeteer(dataFim);
+        await page.waitForSelector('#divInfraAreaDados', { timeout: 500 });
 
         for (const dropdown of varas) {
-            console.log('Selecionando Dropdown:', dropdown);
-            await page.select('#selVaraFederal', dropdown);
-
-            console.log('Clicando no Botão Consultar');
-            await page.click('#btnConsultar');
-
-            // Aguarda até que o conteúdo da página esteja disponível
-            console.log('Aguardando tabela carregar...');
-            await page.waitForFunction(
-                () => document.querySelector('#tblAudienciasEproc') !== null,
-                { timeout: 5000 } // Aumenta o tempo limite para 60 segundos
-            );
-
-            // Verifica o conteúdo da página para depuração
-            const pageContent = await page.content();
-            console.log('Conteúdo da página após clique:', pageContent);
-
             try {
+                await page.waitForSelector('#txtVFDataInicio', { timeout: 500 });
+                await page.$eval('#txtVFDataInicio', (el, value) => el.value = value, dataInicioFormatada);
+                await sleep(500); // Espera 
+
+                console.log('Definindo Data Fim:', dataFimFormatada);
+                await page.waitForSelector('#txtVFDataTermino', { timeout: 500 });
+                await page.$eval('#txtVFDataTermino', (el, value) => el.value = value, dataFimFormatada);
+
+                console.log('Selecionando Dropdown:', dropdown);
+                await sleep(1000); // Espera 
+
+
+                await page.waitForSelector('#divRowVaraFederal', { timeout: 500 });
+
+                await page.waitForSelector('#selVaraFederal', { timeout: 2000 });
+                //await page.select('#selVaraFederal', dropdown);
+                console.log('Selecionando Dropdown:', dropdown);
+
+                await page.$eval('#selVaraFederal', (el, value) => el.value = value, dropdown);
+
+
+                await sleep(1000); // Espera 
+
+                console.log('Clicando no Botão Consultar');
+                await page.click('#btnConsultar');
+
+                await sleep(1000); // Espera 
+
+                // Verifica se há a mensagem de nenhum resultado encontrado
+                const mensagemNenhumResultado = await page.$eval('#divInfraAreaTabela', (div) => {
+                    return div.textContent.includes('Nenhum resultado encontrado');
+                }).catch(() => false);
+
+                if (mensagemNenhumResultado) {
+                    console.log(`Nenhum resultado encontrado para a vara ${dropdown}.`);
+                    resultados.push({
+                        vara: dropdown,
+                        dados: 'Nenhum resultado encontrado.'
+                    });
+                    continue; // Continua para o próximo dropdown
+                }
+
+                // Aguarda até que o conteúdo da página esteja disponível
                 console.log('Aguardando tabela carregar...');
-                await page.waitForSelector('#tblAudienciasEproc', { timeout: 60000 }); // Aumenta o tempo limite para 60 segundos
-            } catch (waitError) {
-                console.error('Erro ao esperar pelo seletor:', waitError);
-                throw waitError; // Re-throw the error after logging
-            }
+                await page.waitForFunction(
+                    () => document.querySelector('#tblAudienciasEproc') !== null,
+                    { timeout: 10000 } // Aumenta o tempo limite
+                );
 
-            const resultadosVara = await page.$$eval('#tblAudienciasEproc tr', (linhas, titulos, termosIgnorados) => {
-                return linhas.map(linha => {
-                    const textoNormalizado = linha.textContent.toLowerCase();
-                    if (['custódia', 'custodia'].some(termo => textoNormalizado.includes(termo))) {
-                        const tds = Array.from(linha.querySelectorAll('td'));
-                        const conteudoLinha = [];
-                        let erroEncontrado = false;
+                // Verifica o conteúdo da página para depuração
+                const pageContent = await page.content();
+                //console.log('Conteúdo da página após clique:', pageContent);
 
-                        tds.forEach(td => {
-                            let tdText = td.innerHTML
-                                .replace(/<br\s*\/?>/gi, ' ')
-                                .replace(/<\/?[^>]+>/gi, ' ')
-                                .replace("Sala: ", " ")
-                                .replace("Evento: ", " ")
-                                .trim();
+                console.log('Aguardando tabela carregar...');
+                await page.waitForSelector('#tblAudienciasEproc', { timeout: 10000 }); // Aumenta o tempo limite
 
-                            termosIgnorados.forEach(termo => {
-                                const pos = tdText.toLowerCase().indexOf(termo.toLowerCase());
-                                if (pos !== -1) {
-                                    tdText = tdText.slice(0, pos).trim();
+                await sleep(1000); // Espera 
+
+                const resultadosVara = await page.$$eval('#tblAudienciasEproc tr', (linhas, titulos, termosIgnorados) => {
+                    return linhas.map(linha => {
+                        const textoNormalizado = linha.textContent.toLowerCase();
+                        if (['custódia', 'custodia'].some(termo => textoNormalizado.includes(termo))) {
+                            const tds = Array.from(linha.querySelectorAll('td'));
+                            const conteudoLinha = [];
+                            let erroEncontrado = false;
+
+                            tds.forEach(td => {
+                                let tdText = td.innerHTML
+                                    .replace(/<br\s*\/?>/gi, ' ')
+                                    .replace(/<\/?[^>]+>/gi, ' ')
+                                    .replace("Sala: ", " ")
+                                    .replace("Evento: ", " ")
+                                    .trim();
+
+                                termosIgnorados.forEach(termo => {
+                                    const pos = tdText.toLowerCase().indexOf(termo.toLowerCase());
+                                    if (pos !== -1) {
+                                        tdText = tdText.slice(0, pos).trim();
+                                    }
+                                });
+
+                                if (tdText.toLowerCase().includes('ocorreu um erro')) {
+                                    erroEncontrado = true;
                                 }
+                                conteudoLinha.push(tdText);
                             });
 
-                            if (tdText.toLowerCase().includes('ocorreu um erro')) {
-                                erroEncontrado = true;
+                            if (!erroEncontrado) {
+                                const conteudoFiltrado = titulos.map(titulo => conteudoLinha.shift() || '');
+                                return conteudoFiltrado;
                             }
-                            conteudoLinha.push(tdText);
-                        });
-
-                        if (!erroEncontrado) {
-                            const conteudoFiltrado = titulos.map(titulo => conteudoLinha.shift() || '');
-                            return conteudoFiltrado;
                         }
-                    }
-                    return null;
-                }).filter(linha => linha !== null);
-            }, titulos, termosIgnorados);
+                        return null;
+                    }).filter(linha => linha !== null);
+                }, titulos, termosIgnorados);
 
-            if (resultadosVara.length > 0) {
-                resultados.push({
-                    vara: dropdown,
-                    dados: resultadosVara
-                });
-            } else {
-                resultados.push({
-                    vara: dropdown,
-                    dados: 'Nenhum resultado encontrado.'
-                });
+                if (resultadosVara.length > 0) {
+                    resultados.push({
+                        vara: dropdown,
+                        dados: resultadosVara
+                    });
+                } else {
+                    resultados.push({
+                        vara: dropdown,
+                        dados: 'Nenhum resultado encontrado.'
+                    });
+                }
+
+            } catch (error) {
+                console.error(`Erro ao processar dropdown ${dropdown}:`, error);
+                continue;
             }
         }
 
@@ -114,4 +154,3 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
         await browser.close();
     }
 }
-
