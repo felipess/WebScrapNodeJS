@@ -12,11 +12,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
 </head>
-<body class="bg-gray-100 h-screen p-4">
-    <div class="container mx-auto p-4 bg-white shadow-lg rounded-lg h-full max-w-full flex flex-col">
+<body class="bg-gray-100 p-4">
+    <div class="container mx-auto p-4 bg-white shadow-lg rounded-lg flex flex-col pb-8"> <!-- Adicionando pb-8 para padding inferior -->
         <!-- 1ª Linha: Campo de Texto -->
         <div class="mb-6">
-            <h1 class="text-2xl font-bold text-center mb-6" >Consulta de audiências de custódia</h1>
+            <h1 class="text-2xl font-bold text-center mb-6">Consulta de audiências de custódia</h1>
         </div>
 
         <!-- 2ª Linha: Data Início, Data Fim, Dropdown -->
@@ -43,18 +43,18 @@
         </div>
 
         <div class="mb-6 rounded-lg shadow-md p-4">
-            <h2 class="text-xl font-semibold mt-4 mb-4 text-center">Varas Selecionadas</h2>
-            <div id="listaVaras" class="list-unstyled  ">
+            <h2 class="text-xl font-semibold mb-4 text-center">Varas Selecionadas</h2>
+            <div id="listaVaras" class="list-unstyled">
                 <!-- Varas selecionadas aparecerão aqui -->
             </div>
         </div>
 
         <!-- 6ª Linha: Labels Última e Próxima Consulta -->
-        <div class="mb-4 rounded-lg shadow-md p-4 ">        
+        <div class="mb-4 rounded-lg shadow-md p-4">        
             <div class="mb-6 text-center">
                 <div class="text-sm text-gray-500">
-                    <span id="ultimaConsulta">Última consulta: </span> - 
-                    <span id="proximaConsulta">Próxima consulta: </span>
+                    <span id="ultimaConsulta"></span> - 
+                    <span id="proximaConsulta"></span>
                 </div>
                 <div id="statusExecucao" class="mt-2 text-sm text-red-600"></div>
             </div>
@@ -65,37 +65,37 @@
             </div>
         </div>
 
-
-        <!-- Label/Título antes da tabela -->
-        <h2 class="text-xl font-semibold mt-4 text-center">Resultados da Consulta</h2>
+        <div class="mb-4 p-4 w-full">
+            <!-- Label/Título antes da tabela -->
+            <h2 class="text-xl font-semibold mt-4 text-center">Resultados da Consulta</h2>
+        </div>
         <!-- 8ª Linha: Tabela de Resultados -->
-        <div class="overflow-x-auto mb-4 rounded-lg shadow-md p-4">        
-            <!-- Tabela -->
-            <table class="table-auto w-full text-left" id="resultados" style="display: none;">
+        <div class="overflow-x-auto mb-4 rounded-lg shadow-md p-4">
+            <table class="table-auto w-full min-w-full text-left" id="resultados" style="display: none;">
                 <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                        <th scope="col" class="px-4 py-2">Data/Hora</th>
-                        <th scope="col" class="px-4 py-2">Processo</th>
-                        <th scope="col" class="px-4 py-2">Juízo/Competência</th>
-                        <th scope="col" class="px-4 py-2">Sala</th>
-                        <th scope="col" class="px-4 py-2">Evento/Observação</th>
-                        <th scope="col" class="px-4 py-2">Ações</th>
+                        <th scope="col" class="px-4 py-2 min-w-[150px]">Data/Hora</th>
+                        <th scope="col" class="px-4 py-2 min-w-[150px]">Processo</th>
+                        <th scope="col" class="px-4 py-2 min-w-[150px]">Juízo/Competência</th>
+                        <th scope="col" class="px-4 py-2 min-w-[150px]">Sala</th>
+                        <th scope="col" class="px-4 py-2 min-w-[150px]">Evento/Observação</th>
+                        <th scope="col" class="px-4 py-2 min-w-[150px]">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Resultados serão adicionados aqui -->
                 </tbody>
             </table>
         </div>
-        
 
         <!-- 9ª Linha: Container de Aviso -->
         <div class="alert mt-4" role="alert" id="aviso">
             <!-- Mensagem de aviso aparecerá aqui -->
         </div>
     </div>
-    <!-- Scripts do Bootstrap -->
+    <!-- Scripts -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="scripts.js"></script>
+
 </body>
 </html>

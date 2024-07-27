@@ -1,3 +1,55 @@
+// ini
+const socket = io();
+
+socket.on('atualizar-status', (data) => {
+    console.log('Atualizando status com dados:', data);
+    document.getElementById('statusExecucao').textContent = data.status;
+    document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
+    document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta}`;
+    const proximaConsultaDate = new Date(data.proximaConsulta);
+    agendarProximaAtualizacao(proximaConsultaDate);
+});
+
+function agendarProximaAtualizacao(proximaConsulta) {
+    const agora = new Date();
+    if (proximaConsulta > agora) {
+        const tempoRestante = proximaConsulta - agora;
+        setTimeout(async () => {
+            await atualizarStatus();
+        }, tempoRestante);
+    }
+}
+
+// Inicializa a atualização do status
+async function atualizarStatus() {
+    try {
+        const response = await fetch('/api/datas-consulta');
+        if (!response.ok) {
+            throw new Error(`Erro ao obter status de consulta: ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log('Dados recebidos no atualizarStatus:', data);
+        document.getElementById('statusExecucao').textContent = data.status;
+        document.getElementById('ultimaConsulta').textContent = `Última consulta: ${extrairHora(data.ultimaConsulta)}`;
+        document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${extrairHora(data.proximaConsulta)}`;
+        agendarProximaAtualizacao(new Date(data.proximaConsulta));
+    } catch (error) {
+        console.error('Erro ao obter status de consulta:', error);
+        document.getElementById('ultimaConsulta').textContent = 'Última consulta: Erro ao carregar';
+        document.getElementById('proximaConsulta').textContent = 'Próxima consulta: Erro ao carregar';
+    }
+}
+
+
+
+// Inicializa a atualização do status
+atualizarStatus();
+
+
+//fim
+
+
+
 // Função para formatar a data no formato 'DD/MM/YYYY'
 function formatDateDDMMYYYY(date) {
     const day = String(date.getDate()).padStart(2, '0');
@@ -32,66 +84,70 @@ let varasSelecionadas = [];
 //         });
 // }
 
+function extrairHora(dataHoraString) {
+    // Divida a string em partes: data e hora
+    const [_, hora] = dataHoraString.split(', ');
+    // Retorne a hora no formato desejado
+    return hora;
+}
+
+
 async function atualizarStatus() {
     try {
         const response = await fetch('/api/datas-consulta');
+        if (!response.ok) {
+            throw new Error(`Erro ao obter status de consulta: ${response.statusText}`);
+        }
         const data = await response.json();
 
-        console.log(response);
-        let abc = document.getElementById('statusExecucao').textContent = data.status;
-        console.log(abc);
-
-        document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
-        document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta}`;
+        console.log('Dados recebidos no atualizarStatus:', data);
+        document.getElementById('statusExecucao').textContent = data.status;
+        document.getElementById('ultimaConsulta').textContent = `Última consulta: ${extrairHora(data.ultimaConsulta)}`;
+        document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${extrairHora(data.proximaConsulta)}`;
+        agendarProximaAtualizacao(data.proximaConsulta);
     } catch (error) {
         console.error('Erro ao obter status de consulta:', error);
     }
 }
+
 // check status a cada 5 segundos
-setInterval(atualizarStatus, 5000);
+//setInterval(atualizarStatus, 5000 * 12); // 1 min
 
 window.onload = () => {
+    atualizarStatus(); // Chama a função ao carregar a página
 
-    // Limpa as datas ao carregar a página
-    document.getElementById('ultimaConsulta').textContent = 'Última consulta: -';
-    document.getElementById('proximaConsulta').textContent = 'Próxima consulta: -';
-
-    // Atualiza as datas da última e próxima consulta
-    // atualizarDatasConsulta();
-
-    // Obtém os elementos de input
+    // Código para inicialização do formulário e tooltips
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
     const startDateLabel = document.getElementById('startDateLabel');
     const endDateLabel = document.getElementById('endDateLabel');
 
-    // Define as datas padrão
     const today = new Date();
     const tomorrow = new Date();
     tomorrow.setDate(today.getDate() + 1);
 
-    // Define os valores dos inputs
     startDateInput.value = formatDateYYYYMMDD(today);
     endDateInput.value = formatDateYYYYMMDD(tomorrow);
 
-    // Exibe as datas no formato DD/MM/YYYY em labels
     startDateLabel.textContent = formatDateDDMMYYYY(today);
     endDateLabel.textContent = formatDateDDMMYYYY(tomorrow);
 };
 
+
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM carregado');
+
     // Atualiza as datas da última e próxima consulta
     try {
         const response = await fetch('/api/datas-consulta');
         if (!response.ok) {
             throw new Error('Erro ao buscar dados da consulta');
         }
-
         const data = await response.json();
         console.log('Dados da consulta recebidos:', data);
 
-        document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
-        document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta}`;
+        document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta || 'Erro'}`;
+        document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta || 'Erro'}`;
     } catch (error) {
         console.error('Erro ao carregar datas de consulta:', error);
         document.getElementById('ultimaConsulta').textContent = 'Última consulta: Erro ao carregar';
@@ -101,8 +157,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Código existente para carregar varas disponíveis
     try {
         const response = await fetch('/api/varas');
+        if (!response.ok) {
+            throw new Error('Erro ao buscar varas');
+        }
         const varasDisponiveis = await response.json();
+        console.log('Varas disponíveis recebidas:', varasDisponiveis);
+
         const dropdown = document.getElementById('dropdown');
+        dropdown.innerHTML = ''; // Limpa o dropdown existente
+
         varasDisponiveis.forEach(group => {
             const optgroup = document.createElement('optgroup');
             optgroup.label = group.label;
@@ -142,6 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 
+
 document.getElementById('adicionarVaras').addEventListener('click', () => {
     const dropdown = document.getElementById('dropdown');
     const selectedOption = dropdown.options[dropdown.selectedIndex];
@@ -178,7 +242,6 @@ document.getElementById('listaVaras').addEventListener('click', event => {
 
 //import { getUltimaConsulta, getProximaConsulta } from './dadosConsulta.mjs';
 document.getElementById('iniciarConsulta').addEventListener('click', async () => {
-    // Desabilita o botão enquanto a consulta está em andamento
     const botaoIniciarConsulta = document.getElementById('iniciarConsulta');
     botaoIniciarConsulta.disabled = true;
 
@@ -186,30 +249,28 @@ document.getElementById('iniciarConsulta').addEventListener('click', async () =>
     const dataFim = document.getElementById('endDate').value;
     const varas = varasSelecionadas.map(v => v.value);
 
-    console.log('Dados enviados:', { dataInicio, dataFim, varas });
+    console.log('Dados enviados para /api/consultar:', { dataInicio, dataFim, varas });
 
     try {
         const response = await fetch(`/api/consultar?dataInicio=${encodeURIComponent(dataInicio)}&dataFim=${encodeURIComponent(dataFim)}&varas=${encodeURIComponent(varas.join(','))}`);
-
         if (!response.ok) {
-            throw new Error('Erro na requisição');
+            throw new Error(`Erro na requisição: ${response.statusText}`);
         }
-
         const resultados = await response.json();
         console.log('Resultados recebidos:', resultados);
 
         const tabela = document.getElementById('resultados');
         const tbody = tabela.querySelector('tbody');
-        tbody.innerHTML = ''; // Limpa a tabela
+        tbody.innerHTML = '';
 
         if (resultados.length === 0) {
-            tabela.style.display = 'none'; // Oculta a tabela
+            tabela.style.display = 'none';
             const aviso = document.getElementById('aviso');
-            aviso.className = 'alert alert-warning'; // Adiciona a classe de erro
+            aviso.className = 'alert alert-warning';
             aviso.textContent = 'Nenhum resultado encontrado.';
             return;
         } else {
-            tabela.style.display = 'table'; // Garante que a tabela esteja visível
+            tabela.style.display = 'table';
         }
 
         resultados.forEach(resultado => {
@@ -231,10 +292,10 @@ document.getElementById('iniciarConsulta').addEventListener('click', async () =>
 
                     const copyButton = document.createElement('button');
                     copyButton.className = 'btn btn-secondary btn-sm';
-                    copyButton.innerHTML = '<i class="bi bi-copy"></i>'; // Ícone de copiar
+                    copyButton.innerHTML = '<i class="bi bi-copy"></i>';
 
                     copyButton.addEventListener('click', () => {
-                        const dadosParaCopiar = [row[4], row[1], row[2], row[0], row[3]]; // Ajuste a ordem se necessário
+                        const dadosParaCopiar = [row[4], row[1], row[2], row[0], row[3]];
                         const textoParaCopiar = dadosParaCopiar.join(' - ');
 
                         navigator.clipboard.writeText(textoParaCopiar).then(() => {
@@ -253,25 +314,20 @@ document.getElementById('iniciarConsulta').addEventListener('click', async () =>
             }
         });
 
-        // Atualiza o aviso para mostrar sucesso
         const aviso = document.getElementById('aviso');
-        aviso.className = 'alert alert-success'; // Adiciona a classe de sucesso
+        aviso.className = 'alert alert-success';
         aviso.textContent = 'Consulta realizada com sucesso!';
-
-        document.getElementById('aviso').textContent = 'Consulta realizada com sucesso!';
 
     } catch (error) {
         console.error('Erro ao consultar:', error);
-        // Atualiza o aviso para mostrar erro
         const aviso = document.getElementById('aviso');
-        aviso.className = 'alert alert-danger'; // Adiciona a classe de erro
+        aviso.className = 'alert alert-danger';
         aviso.textContent = 'Erro ao realizar a consulta.';
     } finally {
-        // Habilita o botão após a consulta ser finalizada
         botaoIniciarConsulta.disabled = false;
-        // atualizarDatasConsulta(); // Atualiza as datas ao final da execução
     }
 });
+
 
 
 

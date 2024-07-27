@@ -2,8 +2,9 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import varasDisponiveis from './varasFederais.js';
-import { executarConsulta } from './consulta.mjs'; // Importa a função de consulta
-import { getUltimaConsulta, getProximaConsulta, setUltimaConsulta, setProximaConsulta, getStatusExecucao } from './dadosConsulta.mjs';
+import { executarConsulta } from './consulta.mjs';
+import { getUltimaConsulta, getProximaConsulta, setUltimaConsulta, setProximaConsulta, getStatusExecucao, setStatusExecucao } from './dadosConsulta.mjs';
+import { Server as SocketIOServer } from 'socket.io';
 
 // Obtém o caminho do diretório do arquivo atual
 const __filename = fileURLToPath(import.meta.url);
@@ -11,6 +12,10 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 3000;
+const server = app.listen(port, () => {
+    console.log(`Servidor rodando em http://localhost:${port}`);
+});
+const io = new SocketIOServer(server);
 
 // Middleware para lidar com JSON
 app.use(express.json());
@@ -57,6 +62,23 @@ app.get('/api/datas-consulta', (req, res) => {
     });
 });
 
+// Endpoint para atualizar informações de consulta
+app.post('/api/atualizar-consulta', (req, res) => {
+    const { ultimaConsulta, proximaConsulta, status } = req.body;
+
+    setStatusExecucao(status);
+    setUltimaConsulta(ultimaConsulta);
+    setProximaConsulta(proximaConsulta);
+
+    io.emit('atualizar-status', {
+        status,
+        ultimaConsulta,
+        proximaConsulta
+    });
+
+    res.status(200).json({ message: 'Informações atualizadas com sucesso!' });
+});
+
 // Endpoint para definir a última consulta
 app.post('/api/ultima-consulta', (req, res) => {
     const { data } = req.body;
@@ -71,7 +93,9 @@ app.post('/api/proxima-consulta', (req, res) => {
     res.status(200).json({ message: 'Próxima consulta atualizada.' });
 });
 
-
-app.listen(port, () => {
-    console.log(`Servidor rodando em http://localhost:${port}`);
+io.on('connection', (socket) => {
+    console.log('Cliente conectado');
+    socket.on('disconnect', () => {
+        console.log('Cliente desconectado');
+    });
 });
