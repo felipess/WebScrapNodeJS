@@ -19,7 +19,7 @@ function finalizaConsulta() {
     setStatusExecucao(''); // Define o status como "Finalizada"
 }
 
-const interval = 1 * 60 * 1000; // Intervalo de 1 minuto em milissegundos
+const interval = 10 * 60 * 1000; // Intervalo de 1 minuto em milissegundos
 
 // Função principal de consulta
 export async function executarConsulta(dataInicio, dataFim, varas) {
@@ -142,7 +142,6 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
         throw new Error(error.message);
     } finally {
         await browser.close();
-
         // Calcula e exibe a próxima consulta
         const proximaConsulta = new Date(Date.now() + interval).toLocaleString();
         console.log(`Próxima consulta: ${proximaConsulta}`);
