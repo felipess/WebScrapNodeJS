@@ -11,6 +11,14 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function finalizaConsulta() {
+    // Atualiza a última consulta
+    const ultimaConsulta = new Date().toLocaleString();
+    console.log(`Última consulta: ${ultimaConsulta}`);
+    setUltimaConsulta(ultimaConsulta); // Atualiza a última consulta no módulo de dados
+    setStatusExecucao('Finalizada'); // Define o status como "Finalizada"
+}
+
 const interval = 1 * 60 * 1000; // Intervalo de 1 minuto em milissegundos
 
 // Função principal de consulta
@@ -23,11 +31,6 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
     const titulos = ["Data/Hora", "Processo", "Juízo/Competência", "Sala", "Evento/Observação"];
     const termosIgnorados = ["Classe:", "Autor:", "Réu:", "Observação:"];
 
-    // Atualiza a última consulta
-    const ultimaConsulta = new Date().toLocaleString();
-    console.log(`Última consulta: ${ultimaConsulta}`);
-    setUltimaConsulta(ultimaConsulta); // Atualiza a última consulta no módulo de dados
-
     try {
         await page.goto('https://eproc.jfpr.jus.br/eprocV2/externo_controlador.php?acao=pauta_audiencias');
         await page.setViewport({ width: 1920, height: 1080 });
@@ -38,8 +41,9 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
         const dataFimFormatada = formatDateForPuppeteer(dataFim);
         await page.waitForSelector('#divInfraAreaDados', { timeout: 500 });
 
-        for (const dropdown of varas) {
+        for (const varaFederal of varas) {
             try {
+                setStatusExecucao(varaFederal);
                 await page.waitForSelector('#txtVFDataInicio', { timeout: 500 });
                 await page.$eval('#txtVFDataInicio', (el, value) => el.value = value, dataInicioFormatada);
                 await sleep(500); // Espera 
@@ -53,9 +57,9 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
                 await page.waitForSelector('#divRowVaraFederal', { timeout: 500 });
 
                 await page.waitForSelector('#selVaraFederal', { timeout: 1000 });
-                console.log('Selecionando Dropdown:', dropdown);
+                console.log('Selecionando varaFederal:', varaFederal);
 
-                await page.$eval('#selVaraFederal', (el, value) => el.value = value, dropdown);
+                await page.$eval('#selVaraFederal', (el, value) => el.value = value, varaFederal);
 
                 await sleep(500); // Espera 
 
@@ -70,8 +74,8 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
                 }).catch(() => false);
 
                 if (mensagemNenhumResultado) {
-                    console.log(`Nenhum resultado encontrado para a vara ${dropdown}.`);
-                    continue; // Continua para o próximo dropdown
+                    console.log(`Nenhum resultado encontrado para a vara ${varaFederal}.`);
+                    continue; // Continua para o próximo varaFederal
                 }
 
                 await sleep(1000); // Espera 
@@ -116,13 +120,13 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
 
                 if (resultadosVara.length > 0) {
                     resultados.push({
-                        vara: dropdown,
+                        vara: varaFederal,
                         dados: resultadosVara
                     });
                 }
 
             } catch (error) {
-                console.error(`Erro ao processar dropdown ${dropdown}:`, error);
+                console.error(`Erro ao processar varaFederal ${varaFederal}:`, error);
                 continue;
             }
         }
@@ -130,6 +134,7 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
         return resultados;
 
     } catch (error) {
+        finalizaConsulta();
         console.error(`Erro: ${error.message}`);
         throw new Error(error.message);
     } finally {
@@ -139,7 +144,7 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
         const proximaConsulta = new Date(Date.now() + interval).toLocaleString();
         console.log(`Próxima consulta: ${proximaConsulta}`);
         setProximaConsulta(proximaConsulta); // Atualiza a próxima consulta no módulo de dados
-        setStatusExecucao('Finalizada'); // Define o status como "Finalizada"
+        finalizaConsulta();
         setTimeout(() => executarConsulta(dataInicio, dataFim, varas), interval);
     }
 }
