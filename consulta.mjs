@@ -16,7 +16,7 @@ function finalizaConsulta() {
     const ultimaConsulta = new Date().toLocaleString();
     console.log(`Última consulta: ${ultimaConsulta}`);
     setUltimaConsulta(ultimaConsulta); // Atualiza a última consulta no módulo de dados
-    setStatusExecucao('Finalizada'); // Define o status como "Finalizada"
+    setStatusExecucao(''); // Define o status como "Finalizada"
 }
 
 const interval = 1 * 60 * 1000; // Intervalo de 1 minuto em milissegundos
@@ -43,7 +43,6 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
 
         for (const varaFederal of varas) {
             try {
-                setStatusExecucao(varaFederal);
                 await page.waitForSelector('#txtVFDataInicio', { timeout: 500 });
                 await page.$eval('#txtVFDataInicio', (el, value) => el.value = value, dataInicioFormatada);
                 await sleep(500); // Espera 
@@ -60,6 +59,10 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
                 console.log('Selecionando varaFederal:', varaFederal);
 
                 await page.$eval('#selVaraFederal', (el, value) => el.value = value, varaFederal);
+                const varaFederalText = await page.$eval('#selVaraFederal', el => el.options[el.selectedIndex].text);
+
+                setStatusExecucao("Consultando: " + varaFederalText + "...");
+
 
                 await sleep(500); // Espera 
 

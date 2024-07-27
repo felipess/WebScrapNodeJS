@@ -57,7 +57,7 @@
                 const data = await response.json();
 
                 console.log(response);
-                let abc = document.getElementById('statusExecucao').textContent = `Status: ${data.status}`;
+                let abc = document.getElementById('statusExecucao').textContent = data.status;
                 console.log(abc);
 
                 document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
@@ -171,7 +171,7 @@
             <div class="col">
                 <span id="ultimaConsulta">Última consulta: </span> - 
                 <span id="proximaConsulta">Próxima consulta: </span>
-                <div id="statusExecucao">Status: </div>
+                <div id="statusExecucao"></div>
             </div>
         </div>
 
@@ -185,7 +185,7 @@
         <!-- 8ª Linha: Tabela de Resultados -->
         <div class="row mb-3">
             <div class="col">
-                <table class="table" id="resultados">
+                <table class="table" id="resultados" style="display: none;">
                     <thead>
                         <tr>
                             <th scope="col">Data/Hora</th>
@@ -206,7 +206,7 @@
         <!-- 9ª Linha: Container de Aviso -->
         <div class="row">
             <div class="col">
-                <div class="alert alert-warning" role="alert" id="aviso">
+                <div class="alert" role="alert" id="aviso">
                     <!-- Mensagem de aviso aparecerá aqui -->
                 </div>
             </div>
@@ -298,7 +298,7 @@
                 span.title = 'Clique para remover'; // Tooltip ao passar o mouse
                 listaVaras.appendChild(span);
             } else {
-                alert('A vara {selecionada} já está presente na lista.');
+                alert(`A ${texto} já está presente na lista.`);
             }
         });
 
@@ -336,12 +336,18 @@
                 const resultados = await response.json();
                 console.log('Resultados recebidos:', resultados);
 
-                const tbody = document.querySelector('#resultados tbody');
+                const tabela = document.getElementById('resultados');
+                const tbody = tabela.querySelector('tbody');
                 tbody.innerHTML = ''; // Limpa a tabela
 
                 if (resultados.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6">Nenhum resultado encontrado.</td></tr>';
+                    tabela.style.display = 'none'; // Oculta a tabela
+                    const aviso = document.getElementById('aviso');
+                    aviso.className = 'alert alert-warning'; // Adiciona a classe de erro
+                    aviso.textContent = 'Nenhum resultado encontrado.';
                     return;
+                } else {
+                    tabela.style.display = 'table'; // Garante que a tabela esteja visível
                 }
 
                 resultados.forEach(resultado => {
@@ -385,11 +391,19 @@
                     }
                 });
 
+                // Atualiza o aviso para mostrar sucesso
+                const aviso = document.getElementById('aviso');
+                aviso.className = 'alert alert-success'; // Adiciona a classe de sucesso
+                aviso.textContent = 'Consulta realizada com sucesso!';
+
                 document.getElementById('aviso').textContent = 'Consulta realizada com sucesso!';
 
             } catch (error) {
                 console.error('Erro ao consultar:', error);
-                document.getElementById('aviso').textContent = 'Erro ao realizar a consulta.';
+                // Atualiza o aviso para mostrar erro
+                const aviso = document.getElementById('aviso');
+                aviso.className = 'alert alert-danger'; // Adiciona a classe de erro
+                aviso.textContent = 'Erro ao realizar a consulta.';
             } finally {
                 // Habilita o botão após a consulta ser finalizada
                 botaoIniciarConsulta.disabled = false;
