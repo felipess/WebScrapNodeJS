@@ -1,15 +1,21 @@
 // ini
-const socket = io();
+// Inicializa o Socket.IO
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicializa o Socket.IO
+    const socket = io();
 
-socket.on('atualizar-status', (data) => {
-    console.log('Atualizando status com dados:', data);
-    document.getElementById('statusExecucao').textContent = data.status;
-    document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta}`;
-    document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta}`;
-    const proximaConsultaDate = new Date(data.proximaConsulta);
-    agendarProximaAtualizacao(proximaConsultaDate);
+    // Ouvinte para o evento 'atualizar-status'
+    socket.on('atualizar-status', (data) => {
+        console.log('Atualizando status com dados:', data);
+        document.getElementById('statusExecucao').textContent = data.status;
+        document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta || 'Erro'}`;
+        document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta || 'Erro'}`;
+        const proximaConsultaDate = new Date(data.proximaConsulta);
+        agendarProximaAtualizacao(proximaConsultaDate);
+    });
 });
 
+// Função para agendar a próxima atualização
 function agendarProximaAtualizacao(proximaConsulta) {
     const agora = new Date();
     if (proximaConsulta > agora) {
@@ -20,30 +26,26 @@ function agendarProximaAtualizacao(proximaConsulta) {
     }
 }
 
-// Inicializa a atualização do status
+// Função para atualizar o status
 async function atualizarStatus() {
     try {
         const response = await fetch('/api/datas-consulta');
-        if (!response.ok) {
-            throw new Error(`Erro ao obter status de consulta: ${response.statusText}`);
-        }
         const data = await response.json();
         console.log('Dados recebidos no atualizarStatus:', data);
         document.getElementById('statusExecucao').textContent = data.status;
-        document.getElementById('ultimaConsulta').textContent = `Última consulta: ${extrairHora(data.ultimaConsulta)}`;
-        document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${extrairHora(data.proximaConsulta)}`;
-        agendarProximaAtualizacao(new Date(data.proximaConsulta));
+        document.getElementById('ultimaConsulta').textContent = `Última consulta: ${data.ultimaConsulta || 'Erro'}`;
+        document.getElementById('proximaConsulta').textContent = `Próxima consulta: ${data.proximaConsulta || 'Erro'}`;
+        const proximaConsultaDate = new Date(data.proximaConsulta);
+        agendarProximaAtualizacao(proximaConsultaDate);
     } catch (error) {
         console.error('Erro ao obter status de consulta:', error);
-        document.getElementById('ultimaConsulta').textContent = 'Última consulta: Erro ao carregar';
-        document.getElementById('proximaConsulta').textContent = 'Próxima consulta: Erro ao carregar';
     }
 }
 
-
-
-// Inicializa a atualização do status
-atualizarStatus();
+// Inicializa a atualização do status ao carregar a página
+window.onload = async () => {
+    await atualizarStatus();
+};
 
 
 //fim

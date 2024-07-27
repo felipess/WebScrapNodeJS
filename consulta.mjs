@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer';
-import { setUltimaConsulta, setProximaConsulta, setStatusExecucao } from './dadosConsulta.mjs';
+import { setUltimaConsulta, setProximaConsulta, setStatusExecucao, getUltimaConsulta, getProximaConsulta, getStatusExecucao } from './dadosConsulta.mjs';
+import { io } from './server.mjs'; // Ajuste o caminho conforme sua estrutura
 
 // Função para converter data no formato 'YYYY-MM-DD' para 'DD/MM/YYYY'
 function formatDateForPuppeteer(dateString) {
@@ -137,7 +138,15 @@ export async function executarConsulta(dataInicio, dataFim, varas) {
         setUltimaConsulta(ultimaConsulta);
         setProximaConsulta(proximaConsulta);
         setStatusExecucao('Concluída');
+
+        io.emit('atualizar-status', {
+            status: getStatusExecucao(),
+            ultimaConsulta: getUltimaConsulta(),
+            proximaConsulta: getProximaConsulta()
+        });
+
         setTimeout(() => executarConsulta(dataInicio, dataFim, varas), interval);
+
     }
 }
 

@@ -15,7 +15,13 @@ const port = 3000;
 const server = app.listen(port, () => {
     console.log(`Servidor rodando em http://localhost:${port}`);
 });
-const io = new SocketIOServer(server);
+const io = new SocketIOServer(server, { // 43.200 requisições mes se 24h //11.880 - 9h dia * 22dias
+    pingInterval: 60000,  // Intervalo de ping - 1 min
+    pingTimeout: 5000     // Tempo limite para resposta de pong - 5s
+});
+
+// Exporta o io para que outros módulos possam usá-lo
+export { io };
 
 // Middleware para lidar com JSON
 app.use(express.json());
@@ -83,6 +89,11 @@ app.post('/api/atualizar-consulta', (req, res) => {
 app.post('/api/ultima-consulta', (req, res) => {
     const { data } = req.body;
     setUltimaConsulta(data);
+    io.emit('atualizar-status', {
+        status: getStatusExecucao(),
+        ultimaConsulta: getUltimaConsulta(),
+        proximaConsulta: getProximaConsulta()
+    });
     res.status(200).json({ message: 'Última consulta atualizada.' });
 });
 
@@ -90,6 +101,11 @@ app.post('/api/ultima-consulta', (req, res) => {
 app.post('/api/proxima-consulta', (req, res) => {
     const { data } = req.body;
     setProximaConsulta(data);
+    io.emit('atualizar-status', {
+        status: getStatusExecucao(),
+        ultimaConsulta: getUltimaConsulta(),
+        proximaConsulta: getProximaConsulta()
+    });
     res.status(200).json({ message: 'Próxima consulta atualizada.' });
 });
 
